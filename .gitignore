@@ -10,8 +10,7 @@ venv/
 dist/
 build/
 
-# Output files
-roads_raw.json
+# Output files (keep roads_raw.json for testing)
 roads_formatted.json
 *.geojson.bak
 

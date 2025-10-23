@@ -96,3 +96,15 @@ Uses a greedy sorting algorithm to:
 5. Continue until all segments are combined
 
 The algorithm ensures segments are spatially close, creating continuous road paths.
+
+## Testing
+
+The repository includes a sample `roads_raw.json` file with test data. You can test the formatting program directly:
+
+```bash
+python format_roads.py
+```
+
+This will process the sample data and create `roads_formatted.json`.
+
+**Note**: The `get_roads.py` program requires internet access to query OpenStreetMap's Overpass API. If you're in a restricted network environment, you can use pre-generated `roads_raw.json` data or create your own sample data following the format shown in the sample file.
