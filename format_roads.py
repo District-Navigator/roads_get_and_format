@@ -11,6 +11,23 @@ import math
 from collections import defaultdict
 
 
+def normalize_road_name(name):
+    """
+    Normalize a road name that may be a string or list.
+    
+    Args:
+        name: Road name (string, list, or other)
+        
+    Returns:
+        str: Normalized road name as a string
+    """
+    if isinstance(name, list):
+        # Join multiple names with " / " separator
+        normalized = ' / '.join(str(n) for n in name if n)
+        return normalized if normalized else 'Unknown'
+    return name if name else 'Unknown'
+
+
 def load_raw_roads(input_file):
     """
     Load raw road segments from JSON file.
@@ -160,12 +177,8 @@ def group_and_combine_roads(roads_data):
     for segment in roads_data:
         road_name = segment.get('name', 'Unknown')
         
-        # Handle list names (some OSM roads have multiple names)
-        if isinstance(road_name, list):
-            # Join multiple names with " / " separator
-            road_name = ' / '.join(str(name) for name in road_name if name)
-            if not road_name:
-                road_name = 'Unknown'
+        # Normalize road name (handle list names from OSM data)
+        road_name = normalize_road_name(road_name)
         
         # Skip unnamed roads or consolidate them
         if road_name and road_name != 'Unknown':
