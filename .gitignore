@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Output files
+roads_raw.json
+roads_formatted.json
+*.geojson.bak
+
+# OSMnx cache
+cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
