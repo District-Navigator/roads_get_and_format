@@ -9,6 +9,7 @@ import json
 import geopandas as gpd
 import osmnx as ox
 from shapely.geometry import shape
+from format_roads import normalize_road_name
 
 
 def load_district_polygon(geojson_file):
@@ -73,13 +74,16 @@ def extract_road_data(G):
         else:
             coords = [(u_node['x'], u_node['y']), (v_node['x'], v_node['y'])]
         
+        # Get road name and normalize if it's a list
+        road_name = normalize_road_name(data.get('name', 'Unknown'))
+        
         # Build road segment dictionary
         road_segment = {
             'edge_id': f"{u}_{v}_{key}",
             'start_node': u,
             'end_node': v,
             'coordinates': coords,
-            'name': data.get('name', 'Unknown'),
+            'name': road_name,
             'highway': data.get('highway', 'unknown'),
             'length': data.get('length', 0),
             'oneway': data.get('oneway', False),
