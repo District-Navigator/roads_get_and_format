@@ -12,6 +12,7 @@ build/
 
 # Output files (keep roads_raw.json for testing)
 roads_formatted.json
+roads_raw_test.json
 *.geojson.bak
 
 # OSMnx cache

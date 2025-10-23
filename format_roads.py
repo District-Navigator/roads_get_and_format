@@ -159,6 +159,14 @@ def group_and_combine_roads(roads_data):
     
     for segment in roads_data:
         road_name = segment.get('name', 'Unknown')
+        
+        # Handle list names (some OSM roads have multiple names)
+        if isinstance(road_name, list):
+            # Join multiple names with " / " separator
+            road_name = ' / '.join(str(name) for name in road_name if name)
+            if not road_name:
+                road_name = 'Unknown'
+        
         # Skip unnamed roads or consolidate them
         if road_name and road_name != 'Unknown':
             roads_by_name[road_name].append(segment)

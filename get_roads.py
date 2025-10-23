@@ -73,13 +73,21 @@ def extract_road_data(G):
         else:
             coords = [(u_node['x'], u_node['y']), (v_node['x'], v_node['y'])]
         
+        # Get road name and normalize if it's a list
+        road_name = data.get('name', 'Unknown')
+        if isinstance(road_name, list):
+            # Join multiple names with " / " separator
+            road_name = ' / '.join(str(name) for name in road_name if name)
+            if not road_name:
+                road_name = 'Unknown'
+        
         # Build road segment dictionary
         road_segment = {
             'edge_id': f"{u}_{v}_{key}",
             'start_node': u,
             'end_node': v,
             'coordinates': coords,
-            'name': data.get('name', 'Unknown'),
+            'name': road_name,
             'highway': data.get('highway', 'unknown'),
             'length': data.get('length', 0),
             'oneway': data.get('oneway', False),
