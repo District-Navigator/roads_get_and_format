@@ -72,6 +72,80 @@ def test_list_names():
         traceback.print_exc()
         return False
 
+
+def test_unnamed_roads_filtering():
+    """Test that roads named 'unnamed' are filtered out"""
+    # Create test data with unnamed roads in various cases
+    test_data = [
+        {
+            'edge_id': '1_2_0',
+            'coordinates': [[-122.4194, 37.7749], [-122.4184, 37.7759]],
+            'name': 'Main Street'
+        },
+        {
+            'edge_id': '2_3_0',
+            'coordinates': [[-122.4184, 37.7759], [-122.4174, 37.7769]],
+            'name': 'unnamed'  # lowercase unnamed
+        },
+        {
+            'edge_id': '3_4_0',
+            'coordinates': [[-122.4100, 37.7700], [-122.4090, 37.7710]],
+            'name': 'Unnamed'  # Capitalized unnamed
+        },
+        {
+            'edge_id': '4_5_0',
+            'coordinates': [[-122.4090, 37.7710], [-122.4080, 37.7720]],
+            'name': 'UNNAMED'  # All caps unnamed
+        },
+        {
+            'edge_id': '5_6_0',
+            'coordinates': [[-122.4080, 37.7720], [-122.4070, 37.7730]],
+            'name': 'Oak Street'
+        },
+        {
+            'edge_id': '6_7_0',
+            'coordinates': [[-122.4070, 37.7730], [-122.4060, 37.7740]],
+            'name': 'UnNaMeD'  # Mixed case unnamed
+        }
+    ]
+    
+    print("\nTesting unnamed roads filtering...")
+    try:
+        formatted_roads = group_and_combine_roads(test_data)
+        print("✓ Test passed! Unnamed roads filtered correctly.")
+        print(f"  Formatted {len(formatted_roads)} unique roads")
+        for road_name in sorted(formatted_roads.keys()):
+            segment_count = formatted_roads[road_name]['segment_count']
+            print(f"  - '{road_name}' ({segment_count} segment{'s' if segment_count > 1 else ''})")
+        
+        # Verify only valid named roads are present
+        actual_roads = set(formatted_roads.keys())
+        expected_roads = {'Main Street', 'Oak Street'}
+        
+        # Check that unnamed roads are NOT in the output
+        unnamed_variations = {'unnamed', 'Unnamed', 'UNNAMED', 'UnNaMeD'}
+        found_unnamed = actual_roads.intersection(unnamed_variations)
+        
+        if found_unnamed:
+            print(f"✗ Test failed! Found unnamed roads in output: {found_unnamed}")
+            return False
+        
+        if actual_roads == expected_roads:
+            print("✓ All expected roads found and unnamed roads filtered out")
+            return True
+        else:
+            print(f"✗ Unexpected roads found: {actual_roads}")
+            print(f"  Expected: {expected_roads}")
+            return False
+            
+    except Exception as e:
+        print(f"✗ Test failed with unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 if __name__ == '__main__':
-    success = test_list_names()
-    sys.exit(0 if success else 1)
+    success1 = test_list_names()
+    success2 = test_unnamed_roads_filtering()
+    sys.exit(0 if (success1 and success2) else 1)
