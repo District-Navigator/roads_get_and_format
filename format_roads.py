@@ -181,7 +181,7 @@ def group_and_combine_roads(roads_data):
         road_name = normalize_road_name(road_name)
         
         # Skip unnamed roads or consolidate them
-        if road_name and road_name != 'Unknown':
+        if road_name and road_name != 'Unknown' and road_name.lower() != 'unnamed':
             roads_by_name[road_name].append(segment)
     
     # Combine segments for each road

@@ -77,6 +77,10 @@ def extract_road_data(G):
         # Get road name and normalize if it's a list
         road_name = normalize_road_name(data.get('name', 'Unknown'))
         
+        # Skip roads named "unnamed" (case-insensitive)
+        if road_name.lower() == 'unnamed':
+            continue
+        
         # Build road segment dictionary
         road_segment = {
             'edge_id': f"{u}_{v}_{key}",
