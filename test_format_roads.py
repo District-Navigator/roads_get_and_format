@@ -32,6 +32,12 @@ def test_road_type_extraction():
         ("Just A Name", None),  # No recognized type
         ("Avenue", "Avenue"),  # Just the type itself
         ("Street", "Street"),  # Just the type itself
+        # Case-insensitive tests
+        ("Main street", "Street"),  # lowercase type
+        ("Oak AVENUE", "Avenue"),  # uppercase type
+        ("Sunset boulevard", "Boulevard"),  # lowercase type
+        ("PINE STREET", "Street"),  # all caps
+        ("elm drive", "Drive"),  # all lowercase
     ]
     
     all_passed = True

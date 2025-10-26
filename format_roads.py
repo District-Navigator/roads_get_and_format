@@ -10,6 +10,13 @@ import json
 import math
 from collections import defaultdict
 
+# List of valid road types for extraction
+ROAD_TYPES = [
+    'Avenue', 'Bay', 'Boulevard', 'Circle', 'Court', 'Cove', 'Drive',
+    'Expressway', 'Lane', 'Parkway', 'Place', 'Road', 'Row', 'Spur',
+    'Street', 'Way'
+]
+
 
 def extract_road_type(road_name):
     """
@@ -25,23 +32,20 @@ def extract_road_type(road_name):
     Returns:
         str or None: The road type if found, otherwise None
     """
-    # List of valid road types to search for
-    road_types = [
-        'Avenue', 'Bay', 'Boulevard', 'Circle', 'Court', 'Cove', 'Drive',
-        'Expressway', 'Lane', 'Parkway', 'Place', 'Road', 'Row', 'Spur',
-        'Street', 'Way'
-    ]
-    
     # Search from right to left for road types
     # We need to ensure the road type starts with a space (or is at the beginning)
     # to avoid matching "way" in "Parkway"
-    for road_type in road_types:
+    for road_type in ROAD_TYPES:
         # Look for the road type at the end of the name, preceded by a space
+        # Use case-insensitive matching to handle variations like "Main street" or "Oak AVENUE"
         search_pattern = ' ' + road_type
         if road_name.endswith(search_pattern):
             return road_type
+        # Also check case-insensitive match
+        if road_name.lower().endswith(search_pattern.lower()):
+            return road_type
         # Also check if the entire name is just the road type (edge case)
-        if road_name == road_type:
+        if road_name.lower() == road_type.lower():
             return road_type
     
     return None
