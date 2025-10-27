@@ -265,9 +265,83 @@ def test_unnamed_roads_filtering():
         return False
 
 
+def test_length_field():
+    """Test that the length field is calculated correctly"""
+    print("\nTesting length field calculation...")
+    
+    test_data = [
+        {
+            'edge_id': '1_2_0',
+            'coordinates': [[-122.4194, 37.7749], [-122.4184, 37.7759]],
+            'name': 'Main Street',
+            'length': 100.0
+        },
+        {
+            'edge_id': '2_3_0',
+            'coordinates': [[-122.4184, 37.7759], [-122.4174, 37.7769]],
+            'name': 'Main Street',
+            'length': 150.0
+        },
+        {
+            'edge_id': '3_4_0',
+            'coordinates': [[-122.4100, 37.7700], [-122.4090, 37.7710]],
+            'name': 'Oak Avenue',
+            'length': 75.5
+        },
+        {
+            'edge_id': '4_5_0',
+            'coordinates': [[-122.4080, 37.7720], [-122.4070, 37.7730]],
+            'name': 'Pine Street',
+            'length': 200.25
+        },
+    ]
+    
+    try:
+        formatted_roads = group_and_combine_roads(test_data)
+        
+        # Check that length field exists and has correct values
+        expected_lengths = {
+            'Main Street': 250.0,  # 100.0 + 150.0
+            'Oak Avenue': 75.5,
+            'Pine Street': 200.25,
+        }
+        
+        all_passed = True
+        for road_name, expected_length in expected_lengths.items():
+            if road_name in formatted_roads:
+                if 'length' in formatted_roads[road_name]:
+                    actual_length = formatted_roads[road_name]['length']
+                    if actual_length == expected_length:
+                        print(f"  ✓ '{road_name}' has length={actual_length}")
+                    else:
+                        print(f"  ✗ '{road_name}' has length={actual_length}, expected {expected_length}")
+                        all_passed = False
+                else:
+                    print(f"  ✗ '{road_name}' missing length field")
+                    all_passed = False
+            else:
+                print(f"  ✗ '{road_name}' not found in output")
+                all_passed = False
+        
+        if all_passed:
+            print("✓ All roads have correct length field!")
+            return True
+        else:
+            print("✗ Some roads have incorrect or missing length field")
+            return False
+            
+    except Exception as e:
+        print(f"✗ Test failed with error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+
 if __name__ == '__main__':
     success1 = test_road_type_extraction()
     success2 = test_road_type_in_output()
     success3 = test_list_names()
     success4 = test_unnamed_roads_filtering()
-    sys.exit(0 if (success1 and success2 and success3 and success4) else 1)
+    success5 = test_length_field()
+    sys.exit(0 if (success1 and success2 and success3 and success4 and success5) else 1)
