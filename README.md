@@ -59,6 +59,7 @@ The final output (`roads_formatted.json`) is a JSON object where:
   - `coordinates`: List of [longitude, latitude] points forming the complete road
   - `segment_count`: Number of original segments combined
   - `total_points`: Total coordinate points in the combined road
+  - `length`: Total length of the road in meters (sum of all segment lengths)
 
 The `road_type` field is extracted by searching the road name from right to left for recognized road types:
 Avenue, Bay, Boulevard, Circle, Court, Cove, Drive, Expressway, Lane, Parkway, Place, Road, Row, Spur, Street, and Way.
@@ -78,7 +79,8 @@ This ensures that roads like "Circle Road" are correctly identified as type "Roa
       ...
     ],
     "segment_count": 5,
-    "total_points": 45
+    "total_points": 45,
+    "length": 567.8
   }
 }
 ```

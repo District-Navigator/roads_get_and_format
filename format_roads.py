@@ -146,16 +146,20 @@ def combine_segments(segments):
         segments: List of road segments for the same road
         
     Returns:
-        list: Combined list of coordinate points forming the complete road
+        tuple: (combined_coords, total_length) where combined_coords is the list of
+               coordinate points forming the complete road and total_length is the
+               sum of all segment lengths
     """
     if not segments:
-        return []
+        return [], 0.0
     
     if len(segments) == 1:
-        return segments[0]['coordinates']
+        segment_length = segments[0].get('length', 0.0)
+        return segments[0]['coordinates'], segment_length
     
     # Start with the first segment
     combined_coords = list(segments[0]['coordinates'])
+    total_length = segments[0].get('length', 0.0)
     used_indices = {0}
     
     # Keep adding segments until all are used
@@ -196,9 +200,11 @@ def combine_segments(segments):
             else:
                 combined_coords.extend(new_coords[1:])
         
+        # Add the length of this segment
+        total_length += segments[idx].get('length', 0.0)
         used_indices.add(idx)
     
-    return combined_coords
+    return combined_coords, total_length
 
 
 def group_and_combine_roads(roads_data):
@@ -229,7 +235,7 @@ def group_and_combine_roads(roads_data):
     
     for road_name, segments in roads_by_name.items():
         print(f"Processing {road_name}: {len(segments)} segments")
-        combined_coords = combine_segments(segments)
+        combined_coords, total_length = combine_segments(segments)
         
         # Extract road type
         road_type = extract_road_type(road_name)
@@ -239,7 +245,8 @@ def group_and_combine_roads(roads_data):
             'road_type': road_type,
             'coordinates': combined_coords,
             'segment_count': len(segments),
-            'total_points': len(combined_coords)
+            'total_points': len(combined_coords),
+            'length': total_length
         }
     
     return formatted_roads
