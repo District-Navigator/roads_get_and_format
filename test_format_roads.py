@@ -337,10 +337,116 @@ def test_length_field():
         return False
 
 
+def test_segments_stored_separately():
+    """Test that segments are stored separately within coordinates list"""
+    print("\nTesting segments stored separately...")
+    
+    test_data = [
+        {
+            'edge_id': '1_2_0',
+            'coordinates': [[-122.4194, 37.7749], [-122.4184, 37.7759]],
+            'name': 'Main Street',
+            'length': 100.0
+        },
+        {
+            'edge_id': '2_3_0',
+            'coordinates': [[-122.4184, 37.7759], [-122.4174, 37.7769]],
+            'name': 'Main Street',
+            'length': 150.0
+        },
+        {
+            'edge_id': '3_4_0',
+            'coordinates': [[-122.4174, 37.7769], [-122.4164, 37.7779]],
+            'name': 'Main Street',
+            'length': 125.0
+        },
+        {
+            'edge_id': '4_5_0',
+            'coordinates': [[-122.4100, 37.7700], [-122.4090, 37.7710]],
+            'name': 'Oak Street',
+            'length': 75.5
+        },
+    ]
+    
+    try:
+        formatted_roads = group_and_combine_roads(test_data)
+        
+        all_passed = True
+        
+        # Check Main Street (multiple segments)
+        if 'Main Street' in formatted_roads:
+            coords = formatted_roads['Main Street']['coordinates']
+            
+            # Check that coordinates is a list of segments
+            if not isinstance(coords, list):
+                print(f"  ✗ 'Main Street' coordinates is not a list")
+                all_passed = False
+            elif len(coords) != 3:
+                print(f"  ✗ 'Main Street' should have 3 segments, got {len(coords)}")
+                all_passed = False
+            else:
+                # Each segment should be a list of coordinate points
+                for i, segment in enumerate(coords):
+                    if not isinstance(segment, list):
+                        print(f"  ✗ 'Main Street' segment {i} is not a list")
+                        all_passed = False
+                    elif len(segment) < 2:
+                        print(f"  ✗ 'Main Street' segment {i} has {len(segment)} points, expected at least 2")
+                        all_passed = False
+                    else:
+                        # Each point should be a [lon, lat] pair
+                        for j, point in enumerate(segment):
+                            if not isinstance(point, list) or len(point) != 2:
+                                print(f"  ✗ 'Main Street' segment {i}, point {j} is not a valid coordinate pair")
+                                all_passed = False
+                
+                if all_passed:
+                    print(f"  ✓ 'Main Street' has 3 segments stored separately")
+                    print(f"    Segment 0: {len(coords[0])} points")
+                    print(f"    Segment 1: {len(coords[1])} points")
+                    print(f"    Segment 2: {len(coords[2])} points")
+        else:
+            print(f"  ✗ 'Main Street' not found in output")
+            all_passed = False
+        
+        # Check Oak Street (single segment)
+        if 'Oak Street' in formatted_roads:
+            coords = formatted_roads['Oak Street']['coordinates']
+            
+            if not isinstance(coords, list):
+                print(f"  ✗ 'Oak Street' coordinates is not a list")
+                all_passed = False
+            elif len(coords) != 1:
+                print(f"  ✗ 'Oak Street' should have 1 segment, got {len(coords)}")
+                all_passed = False
+            elif not isinstance(coords[0], list):
+                print(f"  ✗ 'Oak Street' segment is not a list")
+                all_passed = False
+            else:
+                print(f"  ✓ 'Oak Street' has 1 segment stored separately with {len(coords[0])} points")
+        else:
+            print(f"  ✗ 'Oak Street' not found in output")
+            all_passed = False
+        
+        if all_passed:
+            print("✓ All segments are correctly stored separately!")
+            return True
+        else:
+            print("✗ Some segments are not stored correctly")
+            return False
+            
+    except Exception as e:
+        print(f"✗ Test failed with error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 if __name__ == '__main__':
     success1 = test_road_type_extraction()
     success2 = test_road_type_in_output()
     success3 = test_list_names()
     success4 = test_unnamed_roads_filtering()
     success5 = test_length_field()
-    sys.exit(0 if (success1 and success2 and success3 and success4 and success5) else 1)
+    success6 = test_segments_stored_separately()
+    sys.exit(0 if (success1 and success2 and success3 and success4 and success5 and success6) else 1)

@@ -146,8 +146,8 @@ def combine_segments(segments):
         segments: List of road segments for the same road
         
     Returns:
-        tuple: (combined_coords, total_length) where combined_coords is the list of
-               coordinate points forming the complete road and total_length is the
+        tuple: (segment_coords_list, total_length) where segment_coords_list is a list
+               of coordinate arrays (one per segment) and total_length is the
                sum of all segment lengths
     """
     if not segments:
@@ -155,10 +155,11 @@ def combine_segments(segments):
     
     if len(segments) == 1:
         segment_length = segments[0].get('length', 0.0)
-        return segments[0]['coordinates'], segment_length
+        return [segments[0]['coordinates']], segment_length
     
     # Start with the first segment
     combined_coords = list(segments[0]['coordinates'])
+    segment_list = [list(segments[0]['coordinates'])]  # Store segments separately
     total_length = segments[0].get('length', 0.0)
     used_indices = {0}
     
@@ -183,6 +184,9 @@ def combine_segments(segments):
             if reversed_flag:
                 new_coords = list(reversed(new_coords))
             
+            # Store segment separately
+            segment_list.insert(0, new_coords)
+            
             # Avoid duplicate point at connection
             if new_coords[-1] != combined_coords[0]:
                 combined_coords = new_coords + combined_coords
@@ -194,6 +198,9 @@ def combine_segments(segments):
             if reversed_flag:
                 new_coords = list(reversed(new_coords))
             
+            # Store segment separately
+            segment_list.append(new_coords)
+            
             # Avoid duplicate point at connection
             if new_coords[0] != combined_coords[-1]:
                 combined_coords.extend(new_coords)
@@ -204,7 +211,7 @@ def combine_segments(segments):
         total_length += segments[idx].get('length', 0.0)
         used_indices.add(idx)
     
-    return combined_coords, total_length
+    return segment_list, total_length
 
 
 def group_and_combine_roads(roads_data):
@@ -240,12 +247,15 @@ def group_and_combine_roads(roads_data):
         # Extract road type
         road_type = extract_road_type(road_name)
         
+        # Calculate total points across all segments
+        total_points = sum(len(seg) for seg in combined_coords)
+        
         formatted_roads[road_name] = {
             'name': road_name,
             'road_type': road_type,
             'coordinates': combined_coords,
             'segment_count': len(segments),
-            'total_points': len(combined_coords),
+            'total_points': total_points,
             'length': total_length
         }
     
