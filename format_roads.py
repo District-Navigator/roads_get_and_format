@@ -158,7 +158,6 @@ def combine_segments(segments):
         return [segments[0]['coordinates']], segment_length
     
     # Start with the first segment
-    combined_coords = list(segments[0]['coordinates'])
     segment_list = [list(segments[0]['coordinates'])]  # Store segments separately
     total_length = segments[0].get('length', 0.0)
     used_indices = {0}
@@ -166,14 +165,14 @@ def combine_segments(segments):
     # Keep adding segments until all are used
     while len(used_indices) < len(segments):
         # Get the last point of our combined path
-        last_point = combined_coords[-1]
+        last_point = segment_list[-1][-1]
         
         # Find the closest unused segment
         idx, reversed_flag, distance = find_closest_segment(last_point, segments, used_indices)
         
         if idx is None:
             # No more connectable segments, try from beginning
-            first_point = combined_coords[0]
+            first_point = segment_list[0][0]
             idx, reversed_flag, distance = find_closest_segment(first_point, segments, used_indices)
             
             if idx is None:
@@ -184,28 +183,16 @@ def combine_segments(segments):
             if reversed_flag:
                 new_coords = list(reversed(new_coords))
             
-            # Store segment separately
+            # Store segment separately at the beginning
             segment_list.insert(0, new_coords)
-            
-            # Avoid duplicate point at connection
-            if new_coords[-1] != combined_coords[0]:
-                combined_coords = new_coords + combined_coords
-            else:
-                combined_coords = new_coords[:-1] + combined_coords
         else:
             # Add to end of path
             new_coords = segments[idx]['coordinates']
             if reversed_flag:
                 new_coords = list(reversed(new_coords))
             
-            # Store segment separately
+            # Store segment separately at the end
             segment_list.append(new_coords)
-            
-            # Avoid duplicate point at connection
-            if new_coords[0] != combined_coords[-1]:
-                combined_coords.extend(new_coords)
-            else:
-                combined_coords.extend(new_coords[1:])
         
         # Add the length of this segment
         total_length += segments[idx].get('length', 0.0)
