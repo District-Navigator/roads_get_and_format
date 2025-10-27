@@ -10,6 +10,46 @@ import json
 import math
 from collections import defaultdict
 
+# List of valid road types for extraction
+ROAD_TYPES = [
+    'Avenue', 'Bay', 'Boulevard', 'Circle', 'Court', 'Cove', 'Drive',
+    'Expressway', 'Lane', 'Parkway', 'Place', 'Road', 'Row', 'Spur',
+    'Street', 'Way'
+]
+
+
+def extract_road_type(road_name):
+    """
+    Extract the road type from a road name by searching right-to-left.
+    
+    Searches for road type suffixes (Avenue, Boulevard, Street, etc.) from
+    right to left to avoid false matches. For example, "Circle Road" should
+    return "Road" not "Circle", and "Parkway" should not match "Way".
+    
+    Args:
+        road_name: The full road name (string)
+        
+    Returns:
+        str or None: The road type if found, otherwise None
+    """
+    # Search from right to left for road types
+    # We need to ensure the road type starts with a space (or is at the beginning)
+    # to avoid matching "way" in "Parkway"
+    for road_type in ROAD_TYPES:
+        # Look for the road type at the end of the name, preceded by a space
+        # Use case-insensitive matching to handle variations like "Main street" or "Oak AVENUE"
+        search_pattern = ' ' + road_type
+        if road_name.endswith(search_pattern):
+            return road_type
+        # Also check case-insensitive match
+        if road_name.lower().endswith(search_pattern.lower()):
+            return road_type
+        # Also check if the entire name is just the road type (edge case)
+        if road_name.lower() == road_type.lower():
+            return road_type
+    
+    return None
+
 
 def normalize_road_name(name):
     """
@@ -191,8 +231,12 @@ def group_and_combine_roads(roads_data):
         print(f"Processing {road_name}: {len(segments)} segments")
         combined_coords = combine_segments(segments)
         
+        # Extract road type
+        road_type = extract_road_type(road_name)
+        
         formatted_roads[road_name] = {
             'name': road_name,
+            'road_type': road_type,
             'coordinates': combined_coords,
             'segment_count': len(segments),
             'total_points': len(combined_coords)

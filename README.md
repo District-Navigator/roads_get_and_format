@@ -55,9 +55,15 @@ The final output (`roads_formatted.json`) is a JSON object where:
 - Keys are road names
 - Values contain:
   - `name`: The road name
+  - `road_type`: The type of road (e.g., Street, Avenue, Boulevard, etc.), extracted from the road name. Null if no recognized type is found.
   - `coordinates`: List of [longitude, latitude] points forming the complete road
   - `segment_count`: Number of original segments combined
   - `total_points`: Total coordinate points in the combined road
+
+The `road_type` field is extracted by searching the road name from right to left for recognized road types:
+Avenue, Bay, Boulevard, Circle, Court, Cove, Drive, Expressway, Lane, Parkway, Place, Road, Row, Spur, Street, and Way.
+
+This ensures that roads like "Circle Road" are correctly identified as type "Road" (not "Circle"), and "Broadway Parkway" is identified as "Parkway" (not "Way").
 
 ## Example
 
@@ -65,6 +71,7 @@ The final output (`roads_formatted.json`) is a JSON object where:
 {
   "Main Street": {
     "name": "Main Street",
+    "road_type": "Street",
     "coordinates": [
       [-122.4194, 37.7749],
       [-122.4184, 37.7759],

@@ -4,7 +4,127 @@ Test script for format_roads.py to verify handling of list names
 """
 import json
 import sys
-from format_roads import group_and_combine_roads
+from format_roads import group_and_combine_roads, extract_road_type
+
+def test_road_type_extraction():
+    """Test that road types are extracted correctly from road names"""
+    print("Testing road type extraction...")
+    
+    test_cases = [
+        # (road_name, expected_road_type)
+        ("Main Street", "Street"),
+        ("Oak Avenue", "Avenue"),
+        ("Sunset Boulevard", "Boulevard"),
+        ("Circle Road", "Road"),  # Should be "Road" not "Circle"
+        ("Broadway Parkway", "Parkway"),  # Should be "Parkway" not "Way"
+        ("Elm Drive", "Drive"),
+        ("Harbor Bay", "Bay"),
+        ("Park Court", "Court"),
+        ("Willow Cove", "Cove"),
+        ("Interstate Expressway", "Expressway"),
+        ("Memory Lane", "Lane"),
+        ("Market Place", "Place"),
+        ("Factory Row", "Row"),
+        ("Mountain Spur", "Spur"),
+        ("Ocean Way", "Way"),
+        ("Circle Circle", "Circle"),  # Edge case: Circle at end
+        ("No Road Type Here", None),  # No recognized type
+        ("Just A Name", None),  # No recognized type
+        ("Avenue", "Avenue"),  # Just the type itself
+        ("Street", "Street"),  # Just the type itself
+        # Case-insensitive tests
+        ("Main street", "Street"),  # lowercase type
+        ("Oak AVENUE", "Avenue"),  # uppercase type
+        ("Sunset boulevard", "Boulevard"),  # lowercase type
+        ("PINE STREET", "Street"),  # all caps
+        ("elm drive", "Drive"),  # all lowercase
+    ]
+    
+    all_passed = True
+    for road_name, expected_type in test_cases:
+        actual_type = extract_road_type(road_name)
+        if actual_type == expected_type:
+            print(f"  ✓ '{road_name}' -> '{actual_type}'")
+        else:
+            print(f"  ✗ '{road_name}' -> Expected '{expected_type}', got '{actual_type}'")
+            all_passed = False
+    
+    if all_passed:
+        print("✓ All road type extraction tests passed!")
+        return True
+    else:
+        print("✗ Some road type extraction tests failed")
+        return False
+
+
+def test_road_type_in_output():
+    """Test that road_type field appears in the formatted output"""
+    print("\nTesting road_type field in formatted output...")
+    
+    test_data = [
+        {
+            'edge_id': '1_2_0',
+            'coordinates': [[-122.4194, 37.7749], [-122.4184, 37.7759]],
+            'name': 'Main Street'
+        },
+        {
+            'edge_id': '2_3_0',
+            'coordinates': [[-122.4184, 37.7759], [-122.4174, 37.7769]],
+            'name': 'Circle Road'
+        },
+        {
+            'edge_id': '3_4_0',
+            'coordinates': [[-122.4100, 37.7700], [-122.4090, 37.7710]],
+            'name': 'Broadway Parkway'
+        },
+        {
+            'edge_id': '4_5_0',
+            'coordinates': [[-122.4080, 37.7720], [-122.4070, 37.7730]],
+            'name': 'Sunset Boulevard'
+        },
+    ]
+    
+    try:
+        formatted_roads = group_and_combine_roads(test_data)
+        
+        # Check that road_type field exists in all roads
+        expected_types = {
+            'Main Street': 'Street',
+            'Circle Road': 'Road',
+            'Broadway Parkway': 'Parkway',
+            'Sunset Boulevard': 'Boulevard',
+        }
+        
+        all_passed = True
+        for road_name, expected_type in expected_types.items():
+            if road_name in formatted_roads:
+                if 'road_type' in formatted_roads[road_name]:
+                    actual_type = formatted_roads[road_name]['road_type']
+                    if actual_type == expected_type:
+                        print(f"  ✓ '{road_name}' has road_type='{actual_type}'")
+                    else:
+                        print(f"  ✗ '{road_name}' has road_type='{actual_type}', expected '{expected_type}'")
+                        all_passed = False
+                else:
+                    print(f"  ✗ '{road_name}' missing road_type field")
+                    all_passed = False
+            else:
+                print(f"  ✗ '{road_name}' not found in output")
+                all_passed = False
+        
+        if all_passed:
+            print("✓ All roads have correct road_type field!")
+            return True
+        else:
+            print("✗ Some roads have incorrect or missing road_type field")
+            return False
+            
+    except Exception as e:
+        print(f"✗ Test failed with error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
 
 def test_list_names():
     """Test that list names are handled correctly"""
@@ -42,7 +162,7 @@ def test_list_names():
         }
     ]
     
-    print("Testing with road segments including various name types...")
+    print("\nTesting with road segments including various name types...")
     try:
         formatted_roads = group_and_combine_roads(test_data)
         print("✓ Test passed! All name types handled correctly.")
@@ -146,6 +266,8 @@ def test_unnamed_roads_filtering():
 
 
 if __name__ == '__main__':
-    success1 = test_list_names()
-    success2 = test_unnamed_roads_filtering()
-    sys.exit(0 if (success1 and success2) else 1)
+    success1 = test_road_type_extraction()
+    success2 = test_road_type_in_output()
+    success3 = test_list_names()
+    success4 = test_unnamed_roads_filtering()
+    sys.exit(0 if (success1 and success2 and success3 and success4) else 1)
