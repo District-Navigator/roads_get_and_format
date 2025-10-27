@@ -157,8 +157,8 @@ def combine_segments(segments):
         segment_length = segments[0].get('length', 0.0)
         return [segments[0]['coordinates']], segment_length
     
-    # Start with the first segment
-    segment_list = [list(segments[0]['coordinates'])]  # Store segments separately
+    # Initialize with first segment
+    segment_list = [list(segments[0]['coordinates'])]
     total_length = segments[0].get('length', 0.0)
     used_indices = {0}
     
@@ -178,20 +178,16 @@ def combine_segments(segments):
             if idx is None:
                 break
             
-            # Add to beginning of path
             new_coords = segments[idx]['coordinates']
             if reversed_flag:
                 new_coords = list(reversed(new_coords))
             
-            # Store segment separately at the beginning
             segment_list.insert(0, new_coords)
         else:
-            # Add to end of path
             new_coords = segments[idx]['coordinates']
             if reversed_flag:
                 new_coords = list(reversed(new_coords))
             
-            # Store segment separately at the end
             segment_list.append(new_coords)
         
         # Add the length of this segment
