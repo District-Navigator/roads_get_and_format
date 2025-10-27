@@ -337,7 +337,6 @@ def test_length_field():
         return False
 
 
-
 if __name__ == '__main__':
     success1 = test_road_type_extraction()
     success2 = test_road_type_in_output()

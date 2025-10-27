@@ -146,8 +146,8 @@ def combine_segments(segments):
         segments: List of road segments for the same road
         
     Returns:
-        tuple: (combined_coords, total_length) where combined_coords is the list of 
-               coordinate points forming the complete road and total_length is the 
+        tuple: (combined_coords, total_length) where combined_coords is the list of
+               coordinate points forming the complete road and total_length is the
                sum of all segment lengths
     """
     if not segments:
