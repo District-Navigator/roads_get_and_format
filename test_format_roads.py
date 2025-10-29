@@ -442,6 +442,201 @@ def test_segments_stored_separately():
         return False
 
 
+def test_size_field():
+    """Test that the size field is calculated correctly based on length percentiles"""
+    print("\nTesting size field calculation...")
+    
+    # Test with 6 roads - should divide into two roads per size category
+    test_data = [
+        {
+            'edge_id': '1_2_0',
+            'coordinates': [[-122.41, 37.77], [-122.40, 37.78]],
+            'name': 'Tiny Lane',
+            'length': 50.0
+        },
+        {
+            'edge_id': '2_3_0',
+            'coordinates': [[-122.42, 37.77], [-122.41, 37.78]],
+            'name': 'Short Street',
+            'length': 100.0
+        },
+        {
+            'edge_id': '3_4_0',
+            'coordinates': [[-122.43, 37.77], [-122.42, 37.78]],
+            'name': 'Mid Avenue',
+            'length': 200.0
+        },
+        {
+            'edge_id': '4_5_0',
+            'coordinates': [[-122.44, 37.77], [-122.43, 37.78]],
+            'name': 'Normal Boulevard',
+            'length': 300.0
+        },
+        {
+            'edge_id': '5_6_0',
+            'coordinates': [[-122.45, 37.77], [-122.44, 37.78]],
+            'name': 'Long Road',
+            'length': 400.0
+        },
+        {
+            'edge_id': '6_7_0',
+            'coordinates': [[-122.46, 37.77], [-122.45, 37.78]],
+            'name': 'Huge Highway',
+            'length': 500.0
+        },
+    ]
+    
+    try:
+        formatted_roads = group_and_combine_roads(test_data)
+        
+        # Expected size distribution (6 roads split into thirds):
+        # small (bottom 33%): 2 roads - Tiny Lane (50), Short Street (100)
+        # medium (middle 33%): 2 roads - Mid Avenue (200), Normal Boulevard (300)
+        # big (top 33%): 2 roads - Long Road (400), Huge Highway (500)
+        
+        expected_sizes = {
+            'Tiny Lane': 'small',
+            'Short Street': 'small',
+            'Mid Avenue': 'medium',
+            'Normal Boulevard': 'medium',
+            'Long Road': 'big',
+            'Huge Highway': 'big',
+        }
+        
+        all_passed = True
+        for road_name, expected_size in expected_sizes.items():
+            if road_name in formatted_roads:
+                if 'size' in formatted_roads[road_name]:
+                    actual_size = formatted_roads[road_name]['size']
+                    length = formatted_roads[road_name]['length']
+                    if actual_size == expected_size:
+                        print(f"  ✓ '{road_name}' (length={length}) has size='{actual_size}'")
+                    else:
+                        print(f"  ✗ '{road_name}' (length={length}) has size='{actual_size}', expected '{expected_size}'")
+                        all_passed = False
+                else:
+                    print(f"  ✗ '{road_name}' missing size field")
+                    all_passed = False
+            else:
+                print(f"  ✗ '{road_name}' not found in output")
+                all_passed = False
+        
+        if all_passed:
+            print("✓ All roads have correct size field!")
+            return True
+        else:
+            print("✗ Some roads have incorrect or missing size field")
+            return False
+            
+    except Exception as e:
+        print(f"✗ Test failed with error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_size_field_edge_cases():
+    """Test size field with edge cases like 1, 2, 3, 4, and 5 roads"""
+    print("\nTesting size field edge cases...")
+    
+    all_passed = True
+    
+    # Test with 1 road - should be categorized as big
+    print("  Testing with 1 road...")
+    test_data_1 = [
+        {
+            'edge_id': '1_2_0',
+            'coordinates': [[-122.41, 37.77], [-122.40, 37.78]],
+            'name': 'Solo Street',
+            'length': 100.0
+        },
+    ]
+    formatted_1 = group_and_combine_roads(test_data_1)
+    if formatted_1['Solo Street']['size'] == 'big':
+        print(f"    ✓ 1 road: 'Solo Street' has size='big'")
+    else:
+        print(f"    ✗ 1 road: 'Solo Street' has size='{formatted_1['Solo Street']['size']}', expected 'big'")
+        all_passed = False
+    
+    # Test with 3 roads - should have exactly 1 small, 1 medium, 1 big
+    print("  Testing with 3 roads...")
+    test_data_3 = [
+        {
+            'edge_id': '1_2_0',
+            'coordinates': [[-122.41, 37.77], [-122.40, 37.78]],
+            'name': 'Road A',
+            'length': 100.0
+        },
+        {
+            'edge_id': '2_3_0',
+            'coordinates': [[-122.42, 37.77], [-122.41, 37.78]],
+            'name': 'Road B',
+            'length': 200.0
+        },
+        {
+            'edge_id': '3_4_0',
+            'coordinates': [[-122.43, 37.77], [-122.42, 37.78]],
+            'name': 'Road C',
+            'length': 300.0
+        },
+    ]
+    formatted_3 = group_and_combine_roads(test_data_3)
+    expected_3 = {'Road A': 'small', 'Road B': 'medium', 'Road C': 'big'}
+    for road_name, expected_size in expected_3.items():
+        actual_size = formatted_3[road_name]['size']
+        if actual_size == expected_size:
+            print(f"    ✓ 3 roads: '{road_name}' has size='{actual_size}'")
+        else:
+            print(f"    ✗ 3 roads: '{road_name}' has size='{actual_size}', expected '{expected_size}'")
+            all_passed = False
+    
+    # Test with 4 roads
+    print("  Testing with 4 roads...")
+    test_data_4 = [
+        {
+            'edge_id': '1_2_0',
+            'coordinates': [[-122.41, 37.77], [-122.40, 37.78]],
+            'name': 'Road W',
+            'length': 100.0
+        },
+        {
+            'edge_id': '2_3_0',
+            'coordinates': [[-122.42, 37.77], [-122.41, 37.78]],
+            'name': 'Road X',
+            'length': 200.0
+        },
+        {
+            'edge_id': '3_4_0',
+            'coordinates': [[-122.43, 37.77], [-122.42, 37.78]],
+            'name': 'Road Y',
+            'length': 300.0
+        },
+        {
+            'edge_id': '4_5_0',
+            'coordinates': [[-122.44, 37.77], [-122.43, 37.78]],
+            'name': 'Road Z',
+            'length': 400.0
+        },
+    ]
+    formatted_4 = group_and_combine_roads(test_data_4)
+    # With 4 roads: 4//3 = 1 small, 1 medium, 2 big
+    expected_4 = {'Road W': 'small', 'Road X': 'medium', 'Road Y': 'big', 'Road Z': 'big'}
+    for road_name, expected_size in expected_4.items():
+        actual_size = formatted_4[road_name]['size']
+        if actual_size == expected_size:
+            print(f"    ✓ 4 roads: '{road_name}' has size='{actual_size}'")
+        else:
+            print(f"    ✗ 4 roads: '{road_name}' has size='{actual_size}', expected '{expected_size}'")
+            all_passed = False
+    
+    if all_passed:
+        print("✓ All edge cases handled correctly!")
+        return True
+    else:
+        print("✗ Some edge cases failed")
+        return False
+
+
 if __name__ == '__main__':
     success1 = test_road_type_extraction()
     success2 = test_road_type_in_output()
@@ -449,4 +644,6 @@ if __name__ == '__main__':
     success4 = test_unnamed_roads_filtering()
     success5 = test_length_field()
     success6 = test_segments_stored_separately()
-    sys.exit(0 if (success1 and success2 and success3 and success4 and success5 and success6) else 1)
+    success7 = test_size_field()
+    success8 = test_size_field_edge_cases()
+    sys.exit(0 if (success1 and success2 and success3 and success4 and success5 and success6 and success7 and success8) else 1)

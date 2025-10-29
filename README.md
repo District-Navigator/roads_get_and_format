@@ -60,11 +60,19 @@ The final output (`roads_formatted.json`) is a JSON object where:
   - `segment_count`: Number of original segments combined
   - `total_points`: Total coordinate points across all segments
   - `length`: Total length of the road in meters (sum of all segment lengths)
+  - `size`: Size category based on road length - "big" (top 33% longest roads), "medium" (middle 33%), or "small" (bottom 33% shortest roads)
 
 The `road_type` field is extracted by searching the road name from right to left for recognized road types:
 Avenue, Bay, Boulevard, Circle, Court, Cove, Drive, Expressway, Lane, Parkway, Place, Road, Row, Spur, Street, and Way.
 
 This ensures that roads like "Circle Road" are correctly identified as type "Road" (not "Circle"), and "Broadway Parkway" is identified as "Parkway" (not "Way").
+
+The `size` field categorizes roads into three groups based on their length percentiles:
+- **big**: Roads in the top 33% by length (the longest roads)
+- **medium**: Roads in the middle 33% by length
+- **small**: Roads in the bottom 33% by length (the shortest roads)
+
+This categorization is useful for filtering or styling roads based on their relative importance in the road network.
 
 ## Example
 
@@ -89,7 +97,8 @@ This ensures that roads like "Circle Road" are correctly identified as type "Roa
     ],
     "segment_count": 3,
     "total_points": 6,
-    "length": 567.8
+    "length": 567.8,
+    "size": "big"
   }
 }
 ```

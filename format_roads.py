@@ -197,6 +197,49 @@ def combine_segments(segments):
     return segment_list, total_length
 
 
+def calculate_size_categories(formatted_roads):
+    """
+    Calculate size categories (big, medium, small) for roads based on length percentiles.
+    
+    Roads are categorized as:
+    - big: top 33% of roads by length
+    - medium: middle 33% of roads by length
+    - small: bottom 33% of roads by length
+    
+    Args:
+        formatted_roads: Dictionary of formatted road data with length field
+        
+    Returns:
+        dict: Dictionary mapping road names to size categories
+    """
+    if not formatted_roads:
+        return {}
+    
+    # Extract lengths and sort them
+    road_lengths = [(name, data['length']) for name, data in formatted_roads.items()]
+    road_lengths.sort(key=lambda x: x[1])
+    
+    total_roads = len(road_lengths)
+    
+    # Calculate the indices for 33rd and 66th percentiles
+    # Using integer division to split into thirds
+    small_count = total_roads // 3
+    medium_count = total_roads // 3
+    # big_count gets the remainder to ensure all roads are categorized
+    
+    size_map = {}
+    
+    for i, (name, length) in enumerate(road_lengths):
+        if i < small_count:
+            size_map[name] = 'small'
+        elif i < small_count + medium_count:
+            size_map[name] = 'medium'
+        else:
+            size_map[name] = 'big'
+    
+    return size_map
+
+
 def group_and_combine_roads(roads_data):
     """
     Group road segments by name and combine them.
@@ -241,6 +284,11 @@ def group_and_combine_roads(roads_data):
             'total_points': total_points,
             'length': total_length
         }
+    
+    # Calculate and add size categories
+    size_map = calculate_size_categories(formatted_roads)
+    for road_name in formatted_roads:
+        formatted_roads[road_name]['size'] = size_map.get(road_name, 'medium')
     
     return formatted_roads
 
