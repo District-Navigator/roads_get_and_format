@@ -527,7 +527,7 @@ def test_size_field():
         else:
             print("✗ Some roads have incorrect or missing size field")
             return False
-            
+
     except Exception as e:
         print(f"✗ Test failed with error: {e}")
         import traceback

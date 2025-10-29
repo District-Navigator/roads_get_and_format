@@ -288,7 +288,7 @@ def group_and_combine_roads(roads_data):
     # Calculate and add size categories
     size_map = calculate_size_categories(formatted_roads)
     for road_name in formatted_roads:
-        formatted_roads[road_name]['size'] = size_map.get(road_name, 'medium')
+        formatted_roads[road_name]['size'] = size_map[road_name]
     
     return formatted_roads
 
