@@ -4,10 +4,11 @@ Gets all roads raw data from OSM and then combine all the segments using a sorti
 
 ## Overview
 
-This project consists of two Python programs that work together to extract and format road data from OpenStreetMap:
+This project consists of three Python programs that work together to extract and format road data from OpenStreetMap:
 
 1. **get_roads.py**: Extracts all road segments within a polygon from OpenStreetMap
 2. **format_roads.py**: Combines road segments by name using a sorting algorithm to create continuous paths
+3. **add_areas.py**: Adds area information to each road based on geographic intersection with area polygons
 
 ## Installation
 
@@ -49,6 +50,23 @@ This will:
 - Use a sorting algorithm to combine segments into continuous paths
 - Save formatted roads to `roads_formatted.json`
 
+### Step 3: Add Area Information
+
+Run the third program to add area information to roads:
+
+```bash
+python add_areas.py
+```
+
+This will:
+- Read formatted roads from `roads_formatted.json`
+- Load all area polygons from the `areas/` folder (GeoJSON files)
+- For each area, check every road to see if any coordinates fall within that area
+- Add an `areas` field to each road containing a list of area names
+- Update `roads_formatted.json` in place with the area information
+
+**Note**: A road can be in multiple areas if its coordinates span across different area boundaries.
+
 ## Output Format
 
 The final output (`roads_formatted.json`) is a JSON object where:
@@ -58,6 +76,7 @@ The final output (`roads_formatted.json`) is a JSON object where:
   - `road_type`: The type of road (e.g., Street, Avenue, Boulevard, etc.), extracted from the road name. Null if no recognized type is found.
   - `coordinates`: List of road segments, where each segment is a list of [longitude, latitude] points. This allows drawing segments individually while keeping them together for the road.
   - `segment_count`: Number of original segments combined
+  - `areas`: List of area names that this road intersects (added by `add_areas.py`)
   - `total_points`: Total coordinate points across all segments
   - `length`: Total length of the road in meters (sum of all segment lengths)
   - `size`: Size category based on road length - "big" (top 33% longest roads), "medium" (middle 33%), or "small" (bottom 33% shortest roads)
@@ -98,7 +117,8 @@ This categorization is useful for filtering or styling roads based on their rela
     "segment_count": 3,
     "total_points": 6,
     "length": 567.8,
-    "size": "big"
+    "size": "big",
+    "areas": ["station-8", "station-9"]
   }
 }
 ```
@@ -123,6 +143,17 @@ Uses a greedy sorting algorithm to:
 5. Continue until all segments are combined
 
 The algorithm ensures segments are spatially close, creating continuous road paths.
+
+### Area Assignment (add_areas.py)
+
+Uses point-in-polygon checking to:
+1. Load all area polygons from the `areas/` folder (GeoJSON files)
+2. For each area, iterate through all roads
+3. Check if any coordinate of the road falls within the area polygon
+4. If a match is found, add the area name to the road's `areas` list
+5. Roads can belong to multiple areas if their coordinates span boundaries
+
+The `areas/` folder should contain GeoJSON files with Polygon geometries. Each filename (without extension) becomes the area name in the output.
 
 ## Testing
 
