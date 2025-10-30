@@ -319,3 +319,4 @@ if __name__ == '__main__':
     success4 = test_areas_field_exists()
     
     sys.exit(0 if (success1 and success2 and success3 and success4) else 1)
+
