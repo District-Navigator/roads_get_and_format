@@ -133,7 +133,8 @@ def add_areas_to_roads(formatted_roads, areas, sub_areas):
             
             for road_name, road_data in formatted_roads.items():
                 if check_road_in_area(road_data, polygon):
-                    formatted_roads[road_name]['areas'].append(area_name)
+                    if area_name not in formatted_roads[road_name]['areas']:
+                        formatted_roads[road_name]['areas'].append(area_name)
                     roads_in_area += 1
             
             print(f"  Found {roads_in_area} roads in '{area_name}'")
@@ -146,7 +147,8 @@ def add_areas_to_roads(formatted_roads, areas, sub_areas):
             
             for road_name, road_data in formatted_roads.items():
                 if check_road_in_area(road_data, polygon):
-                    formatted_roads[road_name]['sub_areas'].append(sub_area_name)
+                    if sub_area_name not in formatted_roads[road_name]['sub_areas']:
+                        formatted_roads[road_name]['sub_areas'].append(sub_area_name)
                     roads_in_sub_area += 1
             
             print(f"  Found {roads_in_sub_area} roads in '{sub_area_name}'")
