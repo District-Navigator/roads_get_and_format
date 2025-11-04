@@ -14,6 +14,9 @@ build/
 roads_formatted.json
 roads_raw_test.json
 *.geojson.bak
+district_minimal.json
+district_full.json
+district_upload_comprehensive.json
 
 # OSMnx cache
 cache/
