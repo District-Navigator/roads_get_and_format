@@ -217,8 +217,8 @@ def test_add_areas_to_roads():
         }
     }
     
-    # Add areas to roads
-    updated_roads = add_areas_to_roads(roads, areas)
+    # Add areas to roads (no sub_areas for this test)
+    updated_roads = add_areas_to_roads(roads, areas, {})
     
     all_passed = True
     

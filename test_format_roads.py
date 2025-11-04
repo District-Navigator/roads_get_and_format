@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Test script for format_roads.py to verify handling of list names
+Test script for get_roads.py to verify road formatting and type extraction
 """
 import json
 import sys
-from format_roads import group_and_combine_roads, extract_road_type
+from get_roads import group_and_combine_roads, extract_road_type
 
 def test_road_type_extraction():
     """Test that road types are extracted correctly from road names"""
@@ -168,7 +168,7 @@ def test_list_names():
         print("✓ Test passed! All name types handled correctly.")
         print(f"  Formatted {len(formatted_roads)} unique roads")
         for road_name in sorted(formatted_roads.keys()):
-            segment_count = formatted_roads[road_name]['segment_count']
+            segment_count = formatted_roads[road_name]['segments']
             print(f"  - '{road_name}' ({segment_count} segment{'s' if segment_count > 1 else ''})")
         
         # Verify expected roads
@@ -235,7 +235,7 @@ def test_unnamed_roads_filtering():
         print("✓ Test passed! Unnamed roads filtered correctly.")
         print(f"  Formatted {len(formatted_roads)} unique roads")
         for road_name in sorted(formatted_roads.keys()):
-            segment_count = formatted_roads[road_name]['segment_count']
+            segment_count = formatted_roads[road_name]['segments']
             print(f"  - '{road_name}' ({segment_count} segment{'s' if segment_count > 1 else ''})")
         
         # Verify only valid named roads are present

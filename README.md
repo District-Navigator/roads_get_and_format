@@ -4,13 +4,12 @@ Gets all roads raw data from OSM and then combine all the segments using a sorti
 
 ## Overview
 
-This project consists of five Python programs that work together to extract and format road data from OpenStreetMap and create district objects:
+This project consists of four Python programs that work together to extract and format road data from OpenStreetMap and create district objects:
 
-1. **get_roads.py**: Extracts all road segments within a polygon from OpenStreetMap
-2. **format_roads.py**: Combines road segments by name using a sorting algorithm to create continuous paths
-3. **add_areas.py**: Adds area information to each road based on geographic intersection with area polygons
-4. **create_district.py**: Creates district objects matching database schema requirements for API upload or direct database insertion
-5. **create_district_upload.py**: Creates comprehensive nested uploads with district, areas, roads, members, attachments, and events in a single transaction
+1. **get_roads.py**: Extracts and formats all road data from OpenStreetMap within a district polygon, combining segments by road name
+2. **add_areas.py**: Adds area and sub-area information to each road based on geographic intersection with polygons
+3. **create_district.py**: Creates district objects matching database schema requirements for API upload or direct database insertion
+4. **create_district_upload.py**: Creates comprehensive nested uploads with district, areas, roads, members, attachments, and events in a single transaction
 
 ## Installation
 
@@ -23,11 +22,11 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Step 1: Extract Roads from OSM
+### Step 1: Extract and Format Roads from OSM
 
 First, ensure you have a `my_district.geojson` file with a polygon defining your area of interest. A sample file is included.
 
-Run the first program to extract roads:
+Run the program to extract and format roads:
 
 ```bash
 python get_roads.py
@@ -35,26 +34,21 @@ python get_roads.py
 
 This will:
 - Read the polygon from `my_district.geojson`
-- Query OpenStreetMap for all roads within that polygon
-- Save raw road segments to `roads_raw.json`
-
-### Step 2: Format and Combine Roads
-
-Run the second program to combine road segments:
-
-```bash
-python format_roads.py
-```
-
-This will:
-- Read raw road segments from `roads_raw.json`
-- Group segments by road name
+- Query OpenStreetMap for all roads within that polygon (or use existing `roads_raw.json` if available)
+- Group road segments by road name
 - Use a sorting algorithm to combine segments into continuous paths
 - Save formatted roads to `roads_formatted.json`
 
-### Step 3: Add Area Information
+**Offline Mode**: If `roads_raw.json` exists, the program automatically uses it instead of querying OpenStreetMap. Use `--online` flag to force fresh data from OSM.
 
-Run the third program to add area information to roads:
+**District ID**: Optionally specify a district ID to include in the output:
+```bash
+python get_roads.py --district-id=123
+```
+
+### Step 2: Add Area and Sub-Area Information
+
+Run the program to add area and sub-area information to roads:
 
 ```bash
 python add_areas.py
@@ -63,15 +57,16 @@ python add_areas.py
 This will:
 - Read formatted roads from `roads_formatted.json`
 - Load all area polygons from the `areas/` folder (GeoJSON files)
-- For each area, check every road to see if any coordinates fall within that area
-- Add an `areas` field to each road containing a list of area names
+- Load all sub-area polygons from the `sub_areas/` folder (GeoJSON files)
+- For each area and sub-area, check every road to see if any coordinates fall within that polygon
+- Add `areas` and `sub_areas` fields to each road containing lists of area/sub-area names
 - Update `roads_formatted.json` in place with the area information
 
-**Note**: A road can be in multiple areas if its coordinates span across different area boundaries.
+**Note**: A road can be in multiple areas or sub-areas if its coordinates span across different boundaries.
 
-### Step 4: Create District Object
+### Step 3: Create District Object
 
-Run the fourth program to create a district object:
+Run the program to create a district object:
 
 ```bash
 python create_district.py
@@ -206,13 +201,14 @@ The final output (`roads_formatted.json`) is a JSON object where:
 - Keys are road names
 - Values contain:
   - `name`: The road name
+  - `district_id`: The district ID (optional, included if specified via --district-id flag)
   - `road_type`: The type of road (e.g., Street, Avenue, Boulevard, etc.), extracted from the road name. Null if no recognized type is found.
   - `coordinates`: List of road segments, where each segment is a list of [longitude, latitude] points. This allows drawing segments individually while keeping them together for the road.
-  - `segment_count`: Number of original segments combined
-  - `areas`: List of area names that this road intersects (added by `add_areas.py`)
-  - `total_points`: Total coordinate points across all segments
   - `length`: Total length of the road in meters (sum of all segment lengths)
   - `size`: Size category based on road length - "big" (top 33% longest roads), "medium" (middle 33%), or "small" (bottom 33% shortest roads)
+  - `segments`: Number of original segments combined (integer)
+  - `areas`: List of area names that this road intersects (added by `add_areas.py`)
+  - `sub_areas`: List of sub-area names that this road intersects (added by `add_areas.py`)
 
 The `road_type` field is extracted by searching the road name from right to left for recognized road types:
 Avenue, Bay, Boulevard, Circle, Court, Cove, Drive, Expressway, Lane, Parkway, Place, Road, Row, Spur, Street, and Way.
@@ -362,6 +358,7 @@ The comprehensive upload payload (`district_upload_comprehensive.json`) supports
 {
   "Main Street": {
     "name": "Main Street",
+    "district_id": 123,
     "road_type": "Street",
     "coordinates": [
       [
@@ -377,55 +374,57 @@ The comprehensive upload payload (`district_upload_comprehensive.json`) supports
         [-122.4164, 37.7779]
       ]
     ],
-    "segment_count": 3,
-    "total_points": 6,
     "length": 567.8,
     "size": "big",
-    "areas": ["station-8", "station-9"]
+    "segments": 3,
+    "areas": ["station-8", "station-9"],
+    "sub_areas": []
   }
 }
 ```
 
 ## How It Works
 
-### Road Extraction (get_roads.py)
+### Road Extraction and Formatting (get_roads.py)
 
 Uses OSMnx library to:
 1. Load the district polygon from GeoJSON
-2. Query OpenStreetMap's Overpass API
+2. Query OpenStreetMap's Overpass API (or use existing roads_raw.json in offline mode)
 3. Extract road network as a graph
-4. Convert to structured JSON format
+4. Group segments by road name
+5. Use a greedy sorting algorithm to combine segments into continuous paths
+6. Calculate size categories based on road length percentiles
+7. Output formatted roads with all required fields
 
-### Road Formatting (format_roads.py)
-
-Uses a greedy sorting algorithm to:
-1. Group segments by road name
-2. Start with first segment
-3. Iteratively find closest unconnected segment
-4. Attach segment to path (potentially reversing it)
-5. Continue until all segments are combined
+The greedy sorting algorithm:
+1. Groups segments by road name
+2. Starts with first segment
+3. Iteratively finds closest unconnected segment
+4. Attaches segment to path (potentially reversing it)
+5. Continues until all segments are combined
 
 The algorithm ensures segments are spatially close, creating continuous road paths.
 
-### Area Assignment (add_areas.py)
+### Area and Sub-Area Assignment (add_areas.py)
 
 Uses point-in-polygon checking to:
 1. Load all area polygons from the `areas/` folder (GeoJSON files)
-2. For each area, iterate through all roads
-3. Check if any coordinate of the road falls within the area polygon
-4. If a match is found, add the area name to the road's `areas` list
-5. Roads can belong to multiple areas if their coordinates span boundaries
+2. Load all sub-area polygons from the `sub_areas/` folder (GeoJSON files)
+3. For each area and sub-area, iterate through all roads
+4. Check if any coordinate of the road falls within the polygon
+5. If a match is found, add the area/sub-area name to the road's `areas` or `sub_areas` list
+6. Roads can belong to multiple areas or sub-areas if their coordinates span boundaries
 
-The `areas/` folder should contain GeoJSON files with Polygon geometries. Each filename (without extension) becomes the area name in the output.
+The `areas/` and `sub_areas/` folders should contain GeoJSON files with Polygon geometries. Each filename (without extension) becomes the area or sub-area name in the output.
 
 ## Testing
 
-The repository includes a sample `roads_raw.json` file with test data. You can test the formatting program directly:
+The repository includes a sample `roads_raw.json` file with test data. You can test the program directly:
 
 ```bash
-python format_roads.py
+python get_roads.py
 ```
 
 This will process the sample data and create `roads_formatted.json`.
 
-**Note**: The `get_roads.py` program requires internet access to query OpenStreetMap's Overpass API. If you're in a restricted network environment, you can use pre-generated `roads_raw.json` data or create your own sample data following the format shown in the sample file.
+**Note**: The `get_roads.py` program automatically uses offline mode if `roads_raw.json` exists. It requires internet access to query OpenStreetMap's Overpass API only when using the `--online` flag or when `roads_raw.json` doesn't exist.
