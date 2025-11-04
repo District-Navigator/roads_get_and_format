@@ -2,14 +2,59 @@
 
 Gets all roads raw data from OSM and then combine all the segments using a sorting algorithm
 
+## Quick Start - Unified District Creation
+
+**NEW**: Use the unified `create_district_complete.py` program to create a complete district in one step!
+
+This program condenses the entire district creation workflow into a single command:
+
+```bash
+# Interactive mode - will prompt for all inputs
+python create_district_complete.py my_district.geojson
+
+# Non-interactive mode with all parameters
+python create_district_complete.py my_district.geojson \
+  --name "North Hills" \
+  --key north-hills \
+  --creator-id 42 \
+  --output my_district_upload.json
+```
+
+The unified program will:
+1. ✓ Load the district border from GeoJSON (supports Polygon and MultiLineString)
+2. ✓ Fetch or load road data from OpenStreetMap
+3. ✓ Format and combine road segments
+4. ✓ Load areas and sub-areas from folders
+5. ✓ Assign areas/sub-areas to roads based on geographic intersection
+6. ✓ Create a comprehensive upload payload ready for API submission
+
+**Input Requirements:**
+- `district_geojson`: Path to your district border GeoJSON file
+- `--areas-folder`: Folder containing area GeoJSON files (default: `areas/`)
+- `--sub-areas-folder`: Folder containing sub-area GeoJSON files (default: `sub_areas/`)
+
+**User Inputs (interactive or via CLI):**
+- District name (e.g., "North Hills")
+- District key/slug (auto-generated if not provided)
+- District status (default: "active")
+- Creator user ID (optional)
+
+**Output:**
+- Complete district upload payload as JSON file (default: `district_upload_complete.json`)
+
+See [Complete Usage Examples](#complete-district-creation-unified-program) for more details.
+
+---
+
 ## Overview
 
-This project consists of four Python programs that work together to extract and format road data from OpenStreetMap and create district objects:
+This project consists of five Python programs:
 
-1. **get_roads.py**: Extracts and formats all road data from OpenStreetMap within a district polygon, combining segments by road name
-2. **add_areas.py**: Adds area and sub-area information to each road based on geographic intersection with polygons
-3. **create_district.py**: Creates district objects matching database schema requirements for API upload or direct database insertion
-4. **create_district_upload.py**: Creates comprehensive nested uploads with district, areas, roads, members, attachments, and events in a single transaction
+1. **create_district_complete.py** ⭐ **NEW**: Unified program that handles the complete district creation workflow
+2. **get_roads.py**: Extracts and formats all road data from OpenStreetMap within a district polygon, combining segments by road name
+3. **add_areas.py**: Adds area and sub-area information to each road based on geographic intersection with polygons
+4. **create_district.py**: Creates district objects matching database schema requirements for API upload or direct database insertion
+5. **create_district_upload.py**: Creates comprehensive nested uploads with district, areas, roads, members, attachments, and events in a single transaction
 
 ## Installation
 
@@ -21,6 +66,57 @@ pip install -r requirements.txt
 ```
 
 ## Usage
+
+### Complete District Creation (Unified Program)
+
+The easiest way to create a complete district is using the unified program:
+
+```bash
+# Interactive mode - will prompt for inputs
+python create_district_complete.py my_district.geojson
+
+# Non-interactive mode
+python create_district_complete.py my_district.geojson \
+  --name "My District" \
+  --key my-district \
+  --status active \
+  --creator-id 42 \
+  --areas-folder areas \
+  --sub-areas-folder sub_areas \
+  --output district_upload_complete.json
+```
+
+**Options:**
+- `district_geojson`: Path to district border GeoJSON file (required)
+- `--name NAME`: District name (will prompt if not provided)
+- `--key KEY`: District key/slug (auto-generated from name if not provided)
+- `--status STATUS`: District status - 'active', 'archived', or 'disabled' (default: 'active')
+- `--creator-id ID`: Creator user ID (optional)
+- `--areas-folder PATH`: Folder containing area GeoJSON files (default: 'areas')
+- `--sub-areas-folder PATH`: Folder containing sub-area GeoJSON files (default: 'sub_areas')
+- `--output FILE`: Output JSON file (default: 'district_upload_complete.json')
+- `--online`: Fetch fresh data from OpenStreetMap (default: use cached data if available)
+- `--roads-raw FILE`: Path to raw roads JSON file (default: 'roads_raw.json')
+
+**Example Workflow:**
+
+1. Prepare your district border GeoJSON file
+2. (Optional) Create `areas/` folder with area GeoJSON files
+3. (Optional) Create `sub_areas/` folder with sub-area GeoJSON files
+4. Run the unified program
+5. Upload the generated JSON file to your API
+
+**Notes:**
+- The program automatically converts MultiLineString (border paths) to Polygon
+- Supports both interactive (prompts for inputs) and non-interactive (CLI args) modes
+- Uses cached road data if available to avoid re-querying OpenStreetMap
+- Automatically assigns areas and sub-areas to roads based on coordinate intersection
+
+---
+
+### Alternative: Step-by-Step Process
+
+If you prefer to run each step separately, you can use the individual programs:
 
 ### Step 1: Extract and Format Roads from OSM
 
@@ -419,12 +515,40 @@ The `areas/` and `sub_areas/` folders should contain GeoJSON files with Polygon 
 
 ## Testing
 
-The repository includes a sample `roads_raw.json` file with test data. You can test the program directly:
+The repository includes comprehensive test suites for all programs:
+
+### Test the Unified Program
 
 ```bash
-python get_roads.py
+# Run unit tests for the unified program
+python test_create_district_complete.py
+
+# Test with sample data (non-interactive)
+python create_district_complete.py my_district.geojson \
+  --name "Test District" \
+  --key test-district \
+  --creator-id 42
 ```
 
-This will process the sample data and create `roads_formatted.json`.
+### Test Individual Programs
 
-**Note**: The `get_roads.py` program automatically uses offline mode if `roads_raw.json` exists. It requires internet access to query OpenStreetMap's Overpass API only when using the `--online` flag or when `roads_raw.json` doesn't exist.
+```bash
+# Test district creation
+python test_create_district.py
+
+# Test district upload payload creation
+python test_district_upload.py
+
+# Test area assignment
+python test_add_areas.py
+
+# Test road formatting
+python test_format_roads.py
+
+# Integration tests
+python test_integration.py
+```
+
+The repository includes a sample `roads_raw.json` file with test data. You can test the programs directly using the included sample files.
+
+**Note**: The `get_roads.py` and `create_district_complete.py` programs automatically use offline mode if `roads_raw.json` exists. They require internet access to query OpenStreetMap's Overpass API only when using the `--online` flag or when `roads_raw.json` doesn't exist.
