@@ -350,6 +350,18 @@ def test_error_handling():
     except ValueError:
         print("  ✓ Negative road_count rejected")
     
+    # Test boolean road_count (should be rejected)
+    try:
+        create_district_object(
+            key="test",
+            name="Test",
+            road_count=False
+        )
+        print("  ✗ Boolean road_count accepted")
+        return False
+    except ValueError:
+        print("  ✓ Boolean road_count rejected")
+    
     # Test invalid owner type
     try:
         create_district_object(

@@ -7,6 +7,7 @@ Integration test demonstrating the complete workflow:
 """
 
 import json
+import sys
 from create_district import (
     create_district_from_geojson,
     create_district_object,
@@ -184,12 +185,12 @@ def test_complete_workflow():
 if __name__ == '__main__':
     try:
         success = test_complete_workflow()
-        exit(0 if success else 1)
+        sys.exit(0 if success else 1)
     except AssertionError as e:
         print(f"\n✗ Test failed: {e}")
-        exit(1)
+        sys.exit(1)
     except Exception as e:
         print(f"\n✗ Unexpected error: {e}")
         import traceback
         traceback.print_exc()
-        exit(1)
+        sys.exit(1)

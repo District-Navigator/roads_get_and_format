@@ -209,7 +209,10 @@ def create_district_object(
         district["status"] = status
     
     if road_count is not None:
-        if not isinstance(road_count, int) or road_count < 0:
+        # Explicitly reject boolean values (bool is subclass of int in Python)
+        if isinstance(road_count, bool) or not isinstance(road_count, int):
+            raise ValueError("road_count must be a non-negative integer")
+        if road_count < 0:
             raise ValueError("road_count must be a non-negative integer")
         district["road_count"] = road_count
     
