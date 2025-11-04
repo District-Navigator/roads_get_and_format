@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for format_roads.py to verify handling of list names
+Test script for get_roads.py to verify road formatting and type extraction
 """
 import json
 import sys
