@@ -137,6 +137,7 @@ def validate_geojson_polygon(geojson_obj):
 def load_geojson_file(geojson_file):
     """
     Load a GeoJSON file and extract the polygon geometry.
+    Automatically converts MultiLineString to Polygon if the line is closed.
     
     Args:
         geojson_file: Path to the GeoJSON file
@@ -157,6 +158,27 @@ def load_geojson_file(geojson_file):
     else:
         # Assume it's already a geometry object
         geometry = geojson_data
+    
+    # Convert MultiLineString to Polygon if it's a closed loop
+    if geometry['type'] == 'MultiLineString':
+        # MultiLineString with one line that forms a closed loop -> Polygon
+        if len(geometry['coordinates']) == 1:
+            line_coords = geometry['coordinates'][0]
+            # Check if it's closed (first point equals last point)
+            if line_coords[0] == line_coords[-1]:
+                # Convert to Polygon
+                geometry = {
+                    'type': 'Polygon',
+                    'coordinates': [line_coords]
+                }
+            else:
+                raise ValueError(
+                    "MultiLineString must be closed (first point = last point) to convert to Polygon"
+                )
+        else:
+            raise ValueError(
+                "MultiLineString with multiple lines cannot be converted to Polygon"
+            )
     
     return geometry
 
