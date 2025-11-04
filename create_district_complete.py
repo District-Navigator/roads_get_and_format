@@ -233,7 +233,7 @@ def convert_formatted_roads_to_road_objects(formatted_roads, district_key):
             segments=None,  # We can add detailed segments if needed
             areas=road_data.get('areas', []),
             coordinates=road_data.get('coordinates'),
-            sub_areas=1 if road_data.get('sub_areas') else 0
+            sub_areas=1 if len(road_data.get('sub_areas', [])) > 0 else 0
         )
         
         road_objects.append(road_obj)
