@@ -4,11 +4,12 @@ Gets all roads raw data from OSM and then combine all the segments using a sorti
 
 ## Overview
 
-This project consists of three Python programs that work together to extract and format road data from OpenStreetMap:
+This project consists of four Python programs that work together to extract and format road data from OpenStreetMap and create district objects:
 
 1. **get_roads.py**: Extracts all road segments within a polygon from OpenStreetMap
 2. **format_roads.py**: Combines road segments by name using a sorting algorithm to create continuous paths
 3. **add_areas.py**: Adds area information to each road based on geographic intersection with area polygons
+4. **create_district.py**: Creates district objects matching database schema requirements for API upload or direct database insertion
 
 ## Installation
 
@@ -67,7 +68,52 @@ This will:
 
 **Note**: A road can be in multiple areas if its coordinates span across different area boundaries.
 
-## Output Format
+### Step 4: Create District Object
+
+Run the fourth program to create a district object:
+
+```bash
+python create_district.py
+```
+
+This will:
+- Read the district polygon from `my_district.geojson`
+- Generate a district object matching the database schema requirements
+- Create both minimal (`district_minimal.json`) and full (`district_full.json`) district objects
+- Validate all fields according to database constraints
+
+The created district objects can be uploaded via API or inserted directly into a database.
+
+**Command-line usage** (programmatic):
+```python
+from create_district import create_district_from_geojson, save_district_object
+
+# Create a minimal district
+district = create_district_from_geojson(
+    'my_district.geojson',
+    key='north-hills',
+    name='North Hills',
+    minimal=True
+)
+
+# Create a full district with all optional fields
+full_district = create_district_from_geojson(
+    'my_district.geojson',
+    key='north-hills',
+    name='North Hills',
+    status='active',
+    road_count=0,
+    owner=42,
+    created_by=42
+)
+
+# Save to file
+save_district_object(full_district, 'my_district_object.json')
+```
+
+## Output Formats
+
+### Roads Output Format
 
 The final output (`roads_formatted.json`) is a JSON object where:
 - Keys are road names
@@ -93,7 +139,66 @@ The `size` field categorizes roads into three groups based on their length perce
 
 This categorization is useful for filtering or styling roads based on their relative importance in the road network.
 
-## Example
+### District Object Format
+
+The district objects (`district_minimal.json` and `district_full.json`) follow the database schema requirements:
+
+**Minimal district object** (required fields only):
+```json
+{
+  "key": "north-hills",
+  "name": "North Hills"
+}
+```
+
+**Full district object** (all available fields):
+```json
+{
+  "key": "north-hills",
+  "name": "North Hills",
+  "status": "active",
+  "road_count": 0,
+  "district_border_coordinates": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [-122.4231, 37.8268],
+        [-122.4231, 37.8168],
+        [-122.4131, 37.8168],
+        [-122.4131, 37.8268],
+        [-122.4231, 37.8268]
+      ]
+    ]
+  },
+  "owner": 42,
+  "created_by": 42
+}
+```
+
+**District schema fields:**
+- `id` (integer): DB-managed primary key. Not included in create payloads.
+- `key` (string, required): Unique district slug (e.g., "north-hills")
+- `name` (string, required): Human-readable district name
+- `status` (string, optional): One of 'active', 'archived', 'disabled' (default: 'active')
+- `road_count` (integer, optional): Number of roads in district (default: 0)
+- `created_at` (ISO 8601 timestamp, optional): DB will set if omitted
+- `created_by` (integer, optional): Foreign key to users.id
+- `updated_at` (ISO 8601 timestamp, optional): DB trigger updates this
+- `deleted_at` (ISO 8601 timestamp, optional): For soft-deletes
+- `district_border_coordinates` (GeoJSON object, optional): Polygon or MultiPolygon in [lng, lat] format
+- `owner` (integer, optional): Foreign key to users.id
+
+**Validation rules:**
+- `key`: non-empty, URL-safe slug format (lowercase, alphanumeric, hyphens), max 255 chars, unique
+- `name`: non-empty, max 255 chars
+- `status`: must be one of allowed values if provided
+- `road_count`: non-negative integer
+- `district_border_coordinates`: valid GeoJSON with closed polygon rings
+- `owner`/`created_by`: must be integer user IDs if provided
+
+## Examples
+
+### Roads Example
 
 ```json
 {
