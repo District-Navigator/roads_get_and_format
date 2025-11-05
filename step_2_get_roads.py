@@ -74,6 +74,10 @@ def build_overpass_query(polygon_string):
         
     Returns:
         str: Overpass QL query string
+    
+    Note:
+        The polygon_string is expected to come from a trusted GeoJSON file.
+        If using with untrusted input, additional validation should be added.
     """
     # Query for all highway types (roads) within the polygon
     # The query gets ways tagged with highway=* (all road types)
