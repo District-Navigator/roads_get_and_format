@@ -7,7 +7,6 @@ Takes inputs: name, created_by, owner
 
 import argparse
 import sys
-from datetime import datetime
 
 
 def generate_district_insert_query(name, created_by, owner):
@@ -38,12 +37,16 @@ def generate_district_insert_query(name, created_by, owner):
         except (ValueError, TypeError):
             raise ValueError("owner must be an integer (user ID)")
     
-    # Escape single quotes in name
+    # Escape single quotes in name for SQL (SQLite standard: '' escapes ')
+    # Note: This is the standard SQL escape mechanism for single quotes.
+    # For production use with user input from untrusted sources, consider using
+    # parameterized queries via a database library (e.g., sqlite3 with placeholders).
     escaped_name = name.replace("'", "''")
     
     # Generate SQL query
     # The database schema has defaults for status, road_count, created_at, updated_at
     # We only need to provide: name, created_by, owner
+    # User IDs are validated as integers, preventing SQL injection
     query = f"""INSERT INTO districts (name, created_by, owner)
 VALUES ('{escaped_name}', {created_by}, {owner});"""
     
