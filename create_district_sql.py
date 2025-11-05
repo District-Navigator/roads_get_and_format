@@ -6,6 +6,8 @@ Takes inputs: name, created_by, owner
 """
 
 import argparse
+import json
+import os
 import sys
 
 # ============================================================================
@@ -17,7 +19,33 @@ OWNER = 1
 # ============================================================================
 
 
-def generate_district_insert_query(name, created_by, owner):
+def load_coordinates_from_geojson(geojson_path):
+    """
+    Load coordinates from a GeoJSON file.
+    
+    Args:
+        geojson_path: Path to the GeoJSON file
+        
+    Returns:
+        str: JSON string of the geometry object, or None if not found
+    """
+    try:
+        with open(geojson_path, 'r') as f:
+            geojson_data = json.load(f)
+        
+        # Extract geometry from the first feature
+        if 'features' in geojson_data and len(geojson_data['features']) > 0:
+            geometry = geojson_data['features'][0].get('geometry')
+            if geometry:
+                # Return the geometry as a JSON string
+                return json.dumps(geometry)
+    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+        print(f"Warning: Could not load coordinates from {geojson_path}: {e}", file=sys.stderr)
+    
+    return None
+
+
+def generate_district_insert_query(name, created_by, owner, coordinates=None):
     """
     Generate an SQL INSERT query for adding a district to the database.
     
@@ -25,6 +53,7 @@ def generate_district_insert_query(name, created_by, owner):
         name: District name (TEXT, required)
         created_by: User ID who created the district (INTEGER, FK to users.id)
         owner: Owner user ID (INTEGER, FK to users.id)
+        coordinates: GeoJSON geometry string (optional)
         
     Returns:
         str: SQL INSERT query
@@ -53,9 +82,15 @@ def generate_district_insert_query(name, created_by, owner):
     
     # Generate SQL query
     # The database schema has defaults for status, road_count, created_at, updated_at
-    # We only need to provide: name, created_by, owner
-    # User IDs are validated as integers, preventing SQL injection
-    query = f"""INSERT INTO districts (name, created_by, owner)
+    # We now include district_border_coordinates if available
+    if coordinates:
+        # Escape single quotes and backslashes in JSON string for SQL
+        # Double backslashes first to prevent double-escaping, then escape quotes
+        escaped_coordinates = coordinates.replace("\\", "\\\\").replace("'", "''")
+        query = f"""INSERT INTO districts (name, created_by, owner, district_border_coordinates)
+VALUES ('{escaped_name}', {created_by}, {owner}, '{escaped_coordinates}');"""
+    else:
+        query = f"""INSERT INTO districts (name, created_by, owner)
 VALUES ('{escaped_name}', {created_by}, {owner});"""
     
     return query
@@ -87,6 +122,12 @@ def main():
         default=None,
         help='User ID of the owner (FK to users.id)'
     )
+    parser.add_argument(
+        '--geojson',
+        type=str,
+        default='my_district.geojson',
+        help='Path to GeoJSON file (default: my_district.geojson)'
+    )
     
     args = parser.parse_args()
     
@@ -95,8 +136,16 @@ def main():
     created_by = args.created_by if args.created_by is not None else CREATED_BY
     owner = args.owner if args.owner is not None else OWNER
     
+    # Load coordinates from GeoJSON file
+    # Use absolute path if provided, otherwise look in script directory
+    geojson_path = args.geojson
+    if not os.path.isabs(geojson_path):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        geojson_path = os.path.join(script_dir, geojson_path)
+    coordinates = load_coordinates_from_geojson(geojson_path)
+    
     try:
-        query = generate_district_insert_query(name, created_by, owner)
+        query = generate_district_insert_query(name, created_by, owner, coordinates)
         print(query)
         return 0
     except ValueError as e:
