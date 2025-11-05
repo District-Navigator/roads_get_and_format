@@ -11,9 +11,9 @@ import sys
 # ============================================================================
 # INPUT VARIABLES - Edit these values when running in PyCharm/IDE
 # ============================================================================
-DISTRICT_NAME = "North Hills"
-CREATED_BY = 42
-OWNER = 42
+DISTRICT_NAME = "Berea SC"
+CREATED_BY = 1
+OWNER = 1
 # ============================================================================
 
 
