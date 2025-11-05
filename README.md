@@ -75,13 +75,13 @@ python3 step_3_format_roads.py --areas-dir areas --sub-areas-dir sub_areas
 
 The script produces a JSON file with roads grouped by name. Each road includes:
 - `name` - Full road name
-- `road_type` - Type extracted from name (e.g., "Drive", "Street", "Road")
+- `road_type` - Type extracted from name by searching right to left (e.g., "Circle Road" → "Road", "Fairwood Drive" → "Drive")
 - `coordinates` - Array of coordinate segments (each segment is an array of [lon, lat] pairs)
 - `length` - Total road length in meters
 - `segments` - Number of way segments that make up the road
 - `areas` - List of areas the road passes through
 - `sub_areas` - List of sub-areas the road passes through
-- `size` - Size category based on length (small < 500m, medium < 1000m, large >= 1000m)
+- `size` - Size category based on percentile distribution (small: bottom 33%, medium: middle 33%, large: top 33%)
 
 Example output structure:
 ```json

@@ -215,7 +215,10 @@ def calculate_total_length(coordinate_segments):
 def extract_road_type(road_name):
     """
     Extract the road type from the road name.
-    E.g., "Fairwood Drive" -> "Drive"
+    E.g., "Fairwood Drive" -> "Drive", "Circle Road" -> "Road"
+    
+    Searches from right to left to handle cases like "Circle Road" where
+    "Road" is the type, not "Circle".
     
     Args:
         road_name: Full road name
@@ -233,30 +236,37 @@ def extract_road_type(road_name):
     
     words = road_name.split()
     
-    # Check last word for exact match (case-insensitive)
-    if words:
-        last_word = words[-1]
+    # Search from right to left to find the first matching road type
+    # This handles cases like "Circle Road" where "Road" is the type
+    for i in range(len(words) - 1, -1, -1):
+        word = words[i]
         for road_type in common_types:
-            if last_word.lower() == road_type.lower():
+            if word.lower() == road_type.lower():
                 # Return the original case from the road name
-                return last_word
+                return word
     
     return ""
 
 
-def determine_size(length):
+def determine_size(length, percentile_33, percentile_67):
     """
-    Determine road size category based on length.
+    Determine road size category based on length percentiles.
+    Roads are divided into three equal groups:
+    - small: bottom 33% (length < 33rd percentile)
+    - medium: middle 33% (33rd percentile <= length < 67th percentile)
+    - large: top 33% (length >= 67th percentile)
     
     Args:
         length: Road length in meters
+        percentile_33: The 33rd percentile of all road lengths
+        percentile_67: The 67th percentile of all road lengths
         
     Returns:
         str: Size category (small, medium, large)
     """
-    if length < 500:
+    if length < percentile_33:
         return "small"
-    elif length < 1000:
+    elif length < percentile_67:
         return "medium"
     else:
         return "large"
@@ -321,6 +331,7 @@ def format_roads(roads_data, areas, sub_areas):
     # Calculate length, areas, and size for each road
     formatted_roads = {}
     
+    # First pass: calculate lengths
     for name, road_data in roads_by_name.items():
         # Calculate total length
         length = calculate_total_length(road_data['coordinates'])
@@ -334,10 +345,38 @@ def format_roads(roads_data, areas, sub_areas):
         road_sub_areas = get_areas_for_coordinates(road_data['coordinates'], sub_areas)
         road_data['sub_areas'] = road_sub_areas
         
-        # Determine size
-        road_data['size'] = determine_size(length)
-        
         formatted_roads[name] = road_data
+    
+    # Calculate percentiles for size categorization
+    if formatted_roads:
+        lengths = sorted([road['length'] for road in formatted_roads.values()])
+        n = len(lengths)
+        
+        # Calculate 33rd and 67th percentiles
+        # Using linear interpolation between closest ranks
+        percentile_33_idx = (n - 1) * 0.33
+        percentile_67_idx = (n - 1) * 0.67
+        
+        # Linear interpolation
+        if percentile_33_idx == int(percentile_33_idx):
+            percentile_33 = lengths[int(percentile_33_idx)]
+        else:
+            lower_idx = int(percentile_33_idx)
+            upper_idx = lower_idx + 1
+            fraction = percentile_33_idx - lower_idx
+            percentile_33 = lengths[lower_idx] + fraction * (lengths[upper_idx] - lengths[lower_idx])
+        
+        if percentile_67_idx == int(percentile_67_idx):
+            percentile_67 = lengths[int(percentile_67_idx)]
+        else:
+            lower_idx = int(percentile_67_idx)
+            upper_idx = lower_idx + 1
+            fraction = percentile_67_idx - lower_idx
+            percentile_67 = lengths[lower_idx] + fraction * (lengths[upper_idx] - lengths[lower_idx])
+        
+        # Second pass: assign sizes based on percentiles
+        for name, road_data in formatted_roads.items():
+            road_data['size'] = determine_size(road_data['length'], percentile_33, percentile_67)
     
     return formatted_roads
 
