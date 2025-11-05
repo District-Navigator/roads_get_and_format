@@ -4,12 +4,13 @@ Gets all roads raw data from OSM and then combine all the segments using a sorti
 
 ## Overview
 
-This project consists of four Python programs that work together to extract and format road data from OpenStreetMap and create district objects:
+This project consists of five Python programs that work together to extract and format road data from OpenStreetMap and create district objects:
 
 1. **get_roads.py**: Extracts and formats all road data from OpenStreetMap within a district polygon, combining segments by road name
 2. **add_areas.py**: Adds area and sub-area information to each road based on geographic intersection with polygons
 3. **create_district.py**: Creates district objects matching database schema requirements for API upload or direct database insertion
-4. **create_district_upload.py**: Creates comprehensive nested uploads with district, areas, roads, members, attachments, and events in a single transaction
+4. **create_district_sql.py**: Generates SQL INSERT queries for adding districts directly to a database
+5. **create_district_upload.py**: Creates comprehensive nested uploads with district, areas, roads, members, attachments, and events in a single transaction
 
 ## Installation
 
@@ -106,6 +107,50 @@ full_district = create_district_from_geojson(
 # Save to file
 save_district_object(full_district, 'my_district_object.json')
 ```
+
+### Step 4: Generate SQL INSERT Query for District
+
+For directly inserting a district into a database, use the SQL query generator:
+
+```bash
+python create_district_sql.py "North Hills" 42 42
+```
+
+This will:
+- Take three arguments: district name, created_by user ID, and owner user ID
+- Generate a valid SQL INSERT query for the districts table
+- Output the query to stdout, ready to execute in your database
+
+**Arguments:**
+1. `name`: District name (required, must not be empty)
+2. `created_by`: User ID of the creator (required, must be an integer, FK to users.id)
+3. `owner`: Owner user ID (required, must be an integer, FK to users.id)
+
+**Example output:**
+```sql
+INSERT INTO districts (name, created_by, owner)
+VALUES ('North Hills', 42, 42);
+```
+
+**Usage examples:**
+```bash
+# Basic usage
+python create_district_sql.py "Downtown District" 10 20
+
+# With special characters (quotes are properly escaped)
+python create_district_sql.py "O'Brien District" 5 5
+
+# Redirect to a file
+python create_district_sql.py "Station 8" 1 1 > insert_district.sql
+
+# Execute directly in SQLite
+python create_district_sql.py "West End" 3 3 | sqlite3 database.db
+```
+
+The generated query follows the database schema with:
+- Automatic defaults for `status` ('active'), `road_count` (0), `created_at`, and `updated_at`
+- Proper SQL escaping for special characters in the name
+- Foreign key references to the users table for `created_by` and `owner`
 
 ### Step 5: Create Comprehensive District Upload
 
