@@ -112,8 +112,21 @@ save_district_object(full_district, 'my_district_object.json')
 
 For directly inserting a district into a database, use the SQL query generator:
 
+**Option 1: Command-line usage**
 ```bash
 python create_district_sql.py "North Hills" 42 42
+```
+
+**Option 2: PyCharm/IDE usage (no command-line arguments)**
+Edit the variables at the top of `create_district_sql.py`:
+```python
+DISTRICT_NAME = "North Hills"
+CREATED_BY = 42
+OWNER = 42
+```
+Then simply run the script:
+```bash
+python create_district_sql.py
 ```
 
 This will:
@@ -132,7 +145,7 @@ INSERT INTO districts (name, created_by, owner)
 VALUES ('North Hills', 42, 42);
 ```
 
-**Usage examples:**
+**Command-line usage examples:**
 ```bash
 # Basic usage
 python create_district_sql.py "Downtown District" 10 20

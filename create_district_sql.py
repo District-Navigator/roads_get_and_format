@@ -8,6 +8,14 @@ Takes inputs: name, created_by, owner
 import argparse
 import sys
 
+# ============================================================================
+# INPUT VARIABLES - Edit these values when running in PyCharm/IDE
+# ============================================================================
+DISTRICT_NAME = "North Hills"
+CREATED_BY = 42
+OWNER = 42
+# ============================================================================
+
 
 def generate_district_insert_query(name, created_by, owner):
     """
@@ -61,23 +69,34 @@ def main():
     parser.add_argument(
         'name',
         type=str,
+        nargs='?',  # Make positional argument optional
+        default=None,
         help='District name'
     )
     parser.add_argument(
         'created_by',
         type=int,
+        nargs='?',  # Make positional argument optional
+        default=None,
         help='User ID of the creator (FK to users.id)'
     )
     parser.add_argument(
         'owner',
         type=int,
+        nargs='?',  # Make positional argument optional
+        default=None,
         help='User ID of the owner (FK to users.id)'
     )
     
     args = parser.parse_args()
     
+    # Use command-line arguments if provided, otherwise use variables from top of file
+    name = args.name if args.name is not None else DISTRICT_NAME
+    created_by = args.created_by if args.created_by is not None else CREATED_BY
+    owner = args.owner if args.owner is not None else OWNER
+    
     try:
-        query = generate_district_insert_query(args.name, args.created_by, args.owner)
+        query = generate_district_insert_query(name, created_by, owner)
         print(query)
         return 0
     except ValueError as e:
