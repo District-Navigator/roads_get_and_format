@@ -183,6 +183,9 @@ def calculate_segment_length(coordinates):
     Returns:
         float: Total length in meters
     """
+    if len(coordinates) < 2:
+        return 0.0
+    
     total_length = 0
     
     for i in range(len(coordinates) - 1):
