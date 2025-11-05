@@ -10,7 +10,6 @@ import json
 import math
 import os
 import sys
-from pathlib import Path
 
 
 def load_json_file(filepath):
@@ -87,9 +86,8 @@ def point_in_polygon(point, polygon_coords):
                 if lon <= max(p1_lon, p2_lon):
                     if p1_lat != p2_lat:
                         x_intersect = (lat - p1_lat) * (p2_lon - p1_lon) / (p2_lat - p1_lat) + p1_lon
-                    
-                    if p1_lon == p2_lon or lon <= x_intersect:
-                        inside = not inside
+                        if p1_lon == p2_lon or lon <= x_intersect:
+                            inside = not inside
         
         p1_lon, p1_lat = p2_lon, p2_lat
     
@@ -110,20 +108,37 @@ def get_areas_for_coordinates(coordinates, areas):
     found_areas = set()
     
     for area_name, geometry in areas.items():
-        if geometry.get('type') != 'Polygon':
-            continue
+        geom_type = geometry.get('type')
         
-        # Get the outer ring coordinates
-        polygon_coords = geometry['coordinates'][0]
-        
-        # Check each segment's coordinates
-        for segment in coordinates:
-            for coord in segment:
-                if point_in_polygon(coord, polygon_coords):
-                    found_areas.add(area_name)
+        # Handle Polygon geometry
+        if geom_type == 'Polygon':
+            polygon_coords = geometry['coordinates'][0]
+            
+            # Check each segment's coordinates
+            for segment in coordinates:
+                for coord in segment:
+                    if point_in_polygon(coord, polygon_coords):
+                        found_areas.add(area_name)
+                        break
+                if area_name in found_areas:
                     break
-            if area_name in found_areas:
-                break
+        
+        # Handle MultiPolygon geometry
+        elif geom_type == 'MultiPolygon':
+            # Check each polygon in the MultiPolygon
+            for polygon in geometry['coordinates']:
+                polygon_coords = polygon[0]
+                
+                for segment in coordinates:
+                    for coord in segment:
+                        if point_in_polygon(coord, polygon_coords):
+                            found_areas.add(area_name)
+                            break
+                    if area_name in found_areas:
+                        break
+                
+                if area_name in found_areas:
+                    break
     
     return sorted(list(found_areas))
 
@@ -208,14 +223,20 @@ def extract_road_type(road_name):
     common_types = [
         'Street', 'Road', 'Avenue', 'Drive', 'Lane', 'Way', 'Court', 'Place',
         'Circle', 'Boulevard', 'Parkway', 'Highway', 'Trail', 'Path', 'Terrace',
-        'Plaza', 'Row', 'Alley', 'Walk', 'Run', 'Ridge', 'Crossing', 'Bend'
+        'Plaza', 'Row', 'Alley', 'Walk', 'Run', 'Ridge', 'Crossing', 'Bend',
+        # Common abbreviations
+        'St', 'Rd', 'Ave', 'Dr', 'Ln', 'Blvd', 'Pkwy', 'Hwy', 'Cir', 'Ct', 'Pl'
     ]
     
     words = road_name.split()
     
-    for road_type in common_types:
-        if words and words[-1] == road_type:
-            return road_type
+    # Check last word for exact match (case-insensitive)
+    if words:
+        last_word = words[-1]
+        for road_type in common_types:
+            if last_word.lower() == road_type.lower():
+                # Return the original case from the road name
+                return last_word
     
     return ""
 
