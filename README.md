@@ -75,6 +75,29 @@ python3 step_3_format_roads.py --unnamed-output my_unnamed_roads.json
 - `--sub-areas-dir` - Path to directory containing sub-area GeoJSON files (default: sub_areas)
 - `--unnamed-output` - Path to output file for unnamed roads (default: unnamed_roads.json)
 
+### Step 4: Create District Member SQL (`step_4_create_district_member_sql.py`)
+
+Generates SQL INSERT queries for adding district members to the database.
+
+**Usage:**
+```bash
+# Using default values from the script
+python3 step_4_create_district_member_sql.py
+
+# Using command-line arguments
+python3 step_4_create_district_member_sql.py 2 1
+```
+
+**Options:**
+- `district_id` - District ID (optional, defaults to value in script)
+- `user_id` - User ID (optional, defaults to value in script)
+
+**Example Output:**
+```sql
+INSERT INTO district_members (district_id, user_id, joined_at, active)
+VALUES (2, 1, datetime('now'), 1);
+```
+
 **Output Format:**
 
 The script produces two JSON files:
