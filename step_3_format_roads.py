@@ -410,6 +410,23 @@ def save_formatted_roads(formatted_roads, output_path):
         raise
 
 
+def save_unnamed_roads(unnamed_roads, output_path):
+    """
+    Save unnamed roads to a JSON file.
+    
+    Args:
+        unnamed_roads: List of unnamed road segments
+        output_path: Path to save the JSON file
+    """
+    try:
+        with open(output_path, 'w') as f:
+            json.dump(unnamed_roads, f, indent=2)
+        print(f"Unnamed roads saved to: {output_path}", file=sys.stderr)
+    except Exception as e:
+        print(f"Error saving unnamed roads: {e}", file=sys.stderr)
+        raise
+
+
 def main():
     """Main execution function."""
     parser = argparse.ArgumentParser(
@@ -499,15 +516,15 @@ def main():
         if len(formatted_roads) > 5:
             print(f"  ... and {len(formatted_roads) - 5} more", file=sys.stderr)
         
-        print(f"\nFound {len(unnamed_roads)} unnamed road segments", file=sys.stderr)
+        if unnamed_roads:
+            print(f"\nFound {len(unnamed_roads)} unnamed road segments", file=sys.stderr)
         
         # Save the formatted data
         save_formatted_roads(formatted_roads, output_path)
         
         # Save unnamed roads to separate file
         if unnamed_roads:
-            save_formatted_roads(unnamed_roads, unnamed_output_path)
-            print(f"Unnamed roads saved to: {unnamed_output_path}", file=sys.stderr)
+            save_unnamed_roads(unnamed_roads, unnamed_output_path)
         
         print(f"\nSuccess! Roads formatted and saved.", file=sys.stderr)
         return 0
