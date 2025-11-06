@@ -16,6 +16,32 @@ USER_ID = 1
 # ============================================================================
 
 
+def validate_positive_integer(value, param_name):
+    """
+    Validate that a value is a positive integer.
+    
+    Args:
+        value: Value to validate
+        param_name: Parameter name for error messages
+        
+    Returns:
+        int: Validated integer value
+        
+    Raises:
+        ValueError: If value is not a positive integer
+    """
+    if not isinstance(value, int):
+        try:
+            value = int(value)
+        except (ValueError, TypeError):
+            raise ValueError(f"{param_name} must be an integer")
+    
+    if value <= 0:
+        raise ValueError(f"{param_name} must be a positive integer (got {value})")
+    
+    return value
+
+
 def generate_district_member_insert_query(district_id, user_id):
     """
     Generate an SQL INSERT query for adding a district member to the database.
@@ -27,24 +53,16 @@ def generate_district_member_insert_query(district_id, user_id):
     Returns:
         str: SQL INSERT query
     """
-    # Validate inputs
-    if not isinstance(district_id, int):
-        try:
-            district_id = int(district_id)
-        except (ValueError, TypeError):
-            raise ValueError("district_id must be an integer")
-    
-    if not isinstance(user_id, int):
-        try:
-            user_id = int(user_id)
-        except (ValueError, TypeError):
-            raise ValueError("user_id must be an integer")
+    # Validate inputs as positive integers
+    district_id = validate_positive_integer(district_id, "district_id")
+    user_id = validate_positive_integer(user_id, "user_id")
     
     # Generate SQL query
     # The database schema has defaults for role, permissions, updated_at, deleted_at
     # We explicitly set joined_at to datetime('now') and active to 1
+    # Using str() to be explicit about converting validated integers to strings
     query = f"""INSERT INTO district_members (district_id, user_id, joined_at, active)
-VALUES ({district_id}, {user_id}, datetime('now'), 1);"""
+VALUES ({str(district_id)}, {str(user_id)}, datetime('now'), 1);"""
     
     return query
 
