@@ -282,7 +282,9 @@ def format_roads(roads_data, areas, sub_areas):
         sub_areas: Dictionary of sub-area geometries
         
     Returns:
-        dict: Formatted roads data
+        tuple: (formatted_roads dict, unnamed_roads list)
+            - formatted_roads: Dictionary of named roads
+            - unnamed_roads: List of unnamed road segments
     """
     # Build a lookup for nodes
     nodes = {}
@@ -296,10 +298,11 @@ def format_roads(roads_data, areas, sub_areas):
     
     # Group ways by road name
     roads_by_name = {}
+    unnamed_roads = []
     
     for way in ways:
         tags = way.get('tags', {})
-        name = tags.get('name', 'Unnamed Road')
+        name = tags.get('name')
         
         # Skip ways without coordinates
         node_ids = way.get('nodes', [])
@@ -315,6 +318,15 @@ def format_roads(roads_data, areas, sub_areas):
         if not coordinates:
             continue
         
+        # Handle unnamed roads separately
+        if not name:
+            unnamed_roads.append({
+                'way_id': way.get('id'),
+                'tags': tags,
+                'coordinates': coordinates
+            })
+            continue
+        
         # Initialize road entry if it doesn't exist
         if name not in roads_by_name:
             roads_by_name[name] = {
@@ -328,7 +340,7 @@ def format_roads(roads_data, areas, sub_areas):
         roads_by_name[name]['coordinates'].append(coordinates)
         roads_by_name[name]['segments'] += 1
     
-    # Calculate length, areas, and size for each road
+    # Calculate length, areas, and size for each named road
     formatted_roads = {}
     
     # First pass: calculate lengths
@@ -378,7 +390,7 @@ def format_roads(roads_data, areas, sub_areas):
         for name, road_data in formatted_roads.items():
             road_data['size'] = determine_size(road_data['length'], percentile_33, percentile_67)
     
-    return formatted_roads
+    return formatted_roads, unnamed_roads
 
 
 def save_formatted_roads(formatted_roads, output_path):
@@ -427,6 +439,12 @@ def main():
         default='sub_areas',
         help='Path to directory containing sub-area GeoJSON files (default: sub_areas)'
     )
+    parser.add_argument(
+        '--unnamed-output',
+        type=str,
+        default='unnamed_roads.json',
+        help='Path to output file for unnamed roads (default: unnamed_roads.json)'
+    )
     
     args = parser.parse_args()
     
@@ -449,6 +467,10 @@ def main():
     if not os.path.isabs(sub_areas_dir):
         sub_areas_dir = os.path.join(script_dir, sub_areas_dir)
     
+    unnamed_output_path = args.unnamed_output
+    if not os.path.isabs(unnamed_output_path):
+        unnamed_output_path = os.path.join(script_dir, unnamed_output_path)
+    
     print(f"Loading roads from: {input_path}", file=sys.stderr)
     
     # Load roads data
@@ -468,19 +490,26 @@ def main():
     try:
         # Format the roads
         print("Formatting roads...", file=sys.stderr)
-        formatted_roads = format_roads(roads_data, areas, sub_areas)
+        formatted_roads, unnamed_roads = format_roads(roads_data, areas, sub_areas)
         
-        print(f"\nFormatted {len(formatted_roads)} roads:", file=sys.stderr)
+        print(f"\nFormatted {len(formatted_roads)} named roads:", file=sys.stderr)
         for name, road in list(formatted_roads.items())[:5]:  # Show first 5
             print(f"  - {name}: {road['segments']} segments, {road['length']:.2f}m, areas: {road['areas']}", file=sys.stderr)
         
         if len(formatted_roads) > 5:
             print(f"  ... and {len(formatted_roads) - 5} more", file=sys.stderr)
         
+        print(f"\nFound {len(unnamed_roads)} unnamed road segments", file=sys.stderr)
+        
         # Save the formatted data
         save_formatted_roads(formatted_roads, output_path)
         
-        print(f"\nSuccess! Formatted roads saved.", file=sys.stderr)
+        # Save unnamed roads to separate file
+        if unnamed_roads:
+            save_formatted_roads(unnamed_roads, unnamed_output_path)
+            print(f"Unnamed roads saved to: {unnamed_output_path}", file=sys.stderr)
+        
+        print(f"\nSuccess! Roads formatted and saved.", file=sys.stderr)
         return 0
         
     except Exception as e:

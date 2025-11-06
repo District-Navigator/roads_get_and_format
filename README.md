@@ -51,7 +51,7 @@ python3 step_2_get_roads.py --overpass-url https://overpass.kumi.systems/api/int
 
 ### Step 3: Format Roads (`step_3_format_roads.py`)
 
-Formats the roads data from step 2 into a structured format, grouping road segments by name and determining which areas/sub-areas each road is in.
+Formats the roads data from step 2 into a structured format, grouping road segments by name and determining which areas/sub-areas each road is in. Unnamed roads are saved to a separate file for manual processing.
 
 **Usage:**
 ```bash
@@ -63,6 +63,9 @@ python3 step_3_format_roads.py --input roads.json --output formatted_roads.json
 
 # Use custom areas and sub-areas directories
 python3 step_3_format_roads.py --areas-dir areas --sub-areas-dir sub_areas
+
+# Specify custom output file for unnamed roads
+python3 step_3_format_roads.py --unnamed-output my_unnamed_roads.json
 ```
 
 **Options:**
@@ -70,18 +73,26 @@ python3 step_3_format_roads.py --areas-dir areas --sub-areas-dir sub_areas
 - `--output` - Path to output formatted JSON file (default: formatted_roads.json)
 - `--areas-dir` - Path to directory containing area GeoJSON files (default: areas)
 - `--sub-areas-dir` - Path to directory containing sub-area GeoJSON files (default: sub_areas)
+- `--unnamed-output` - Path to output file for unnamed roads (default: unnamed_roads.json)
 
 **Output Format:**
 
-The script produces a JSON file with roads grouped by name. Each road includes:
-- `name` - Full road name
-- `road_type` - Type extracted from name by searching right to left (e.g., "Circle Road" → "Road", "Fairwood Drive" → "Drive")
-- `coordinates` - Array of coordinate segments (each segment is an array of [lon, lat] pairs)
-- `length` - Total road length in meters
-- `segments` - Number of way segments that make up the road
-- `areas` - List of areas the road passes through
-- `sub_areas` - List of sub-areas the road passes through
-- `size` - Size category based on percentile distribution (small: bottom 33%, medium: middle 33%, large: top 33%)
+The script produces two JSON files:
+
+1. **Named roads** (default: `formatted_roads.json`) - Roads with names, grouped by name. Each road includes:
+   - `name` - Full road name
+   - `road_type` - Type extracted from name by searching right to left (e.g., "Circle Road" → "Road", "Fairwood Drive" → "Drive")
+   - `coordinates` - Array of coordinate segments (each segment is an array of [lon, lat] pairs)
+   - `length` - Total road length in meters
+   - `segments` - Number of way segments that make up the road
+   - `areas` - List of areas the road passes through
+   - `sub_areas` - List of sub-areas the road passes through
+   - `size` - Size category based on percentile distribution (small: bottom 33%, medium: middle 33%, large: top 33%)
+
+2. **Unnamed roads** (default: `unnamed_roads.json`) - Road segments without names, saved as an array. Each segment includes:
+   - `way_id` - OpenStreetMap way ID
+   - `tags` - Original OSM tags for the way
+   - `coordinates` - Array of [lon, lat] pairs for this segment
 
 Example output structure:
 ```json
@@ -106,7 +117,8 @@ Example output structure:
 - `my_district.geojson` - Example GeoJSON file containing the Berea fire district boundary
 - `schema.sql` - Database schema definition
 - `roads.json` - Output file from step_2_get_roads.py (generated, not in repository)
-- `formatted_roads.json` - Output file from step_3_format_roads.py (generated, not in repository)
+- `formatted_roads.json` - Named roads output from step_3_format_roads.py (generated, not in repository)
+- `unnamed_roads.json` - Unnamed roads output from step_3_format_roads.py (generated, not in repository)
 - `areas/` - Directory containing area boundary GeoJSON files
 - `sub_areas/` - Directory containing sub-area boundary GeoJSON files
 
