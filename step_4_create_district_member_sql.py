@@ -167,7 +167,17 @@ def main():
     
     try:
         query = generate_district_insert_query(name, created_at, created_by, district_border_coordinates, owner)
-        print(query)
+        
+        # Write output to file
+        output_file = 'step_4_output.txt'
+        try:
+            with open(output_file, 'w') as f:
+                f.write(query)
+            print(f"SQL query written to {output_file}")
+        except IOError as e:
+            print(f"Error: Could not write to {output_file}: {e}", file=sys.stderr)
+            return 1
+        
         return 0
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
