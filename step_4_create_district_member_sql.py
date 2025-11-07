@@ -65,8 +65,9 @@ def generate_district_insert_query(name, created_at, created_by, district_border
     
     # Add district_border_coordinates if provided
     if district_border_coordinates is not None:
-        # Escape single quotes and backslashes in JSON string for SQL
-        escaped_coordinates = str(district_border_coordinates).replace("\\", "\\\\").replace("'", "''")
+        # Escape single quotes in JSON string for SQL (SQLite standard: '' escapes ')
+        # Note: backslash escaping is less critical in SQLite TEXT fields
+        escaped_coordinates = str(district_border_coordinates).replace("'", "''")
         fields.append('district_border_coordinates')
         values.append(f"'{escaped_coordinates}'")
     
@@ -127,7 +128,11 @@ def main():
     # Treat empty strings as None for optional fields
     created_at = args.created_at if args.created_at not in (None, '') else CREATED_AT
     created_by = args.created_by if args.created_by is not None else CREATED_BY
-    district_border_coordinates = args.district_border_coordinates if args.district_border_coordinates not in (None, '') else DISTRICT_BORDER_COORDINATES
+    district_border_coordinates = (
+        args.district_border_coordinates 
+        if args.district_border_coordinates not in (None, '') 
+        else DISTRICT_BORDER_COORDINATES
+    )
     owner = args.owner if args.owner is not None else OWNER
     
     try:
