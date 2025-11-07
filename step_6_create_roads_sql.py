@@ -62,13 +62,20 @@ def generate_road_insert_query(district_id, name, road_data):
     """
     Generate an SQL INSERT query for adding a road to the database.
     
+    Note: The 'areas' field in the database expects a JSON array of area IDs (integers),
+    but formatted_roads.json contains area names (strings). This function stores area
+    names in the JSON for now. You should either:
+    1. Post-process the SQL to replace area names with IDs after areas are created, OR
+    2. Run a separate UPDATE query after inserting roads to populate area IDs, OR
+    3. Have your application resolve area names to IDs before insertion
+    
     Args:
         district_id: District ID (INTEGER, FK to districts.id)
         name: Road name (TEXT, required)
         road_data: Road data from formatted_roads.json
         
     Returns:
-        str: SQL INSERT query
+        str: SQL INSERT query with a comment about area name references
     """
     # Validate inputs
     if not isinstance(district_id, int):
@@ -89,8 +96,7 @@ def generate_road_insert_query(district_id, name, road_data):
     
     # Extract road type (use empty string if not present)
     road_type = road_data.get('road_type', '')
-    if road_type:
-        escaped_type = road_type.replace("'", "''")
+    escaped_type = road_type.replace("'", "''") if road_type else ''
     
     # Extract length (REAL)
     length = road_data.get('length', 0.0)
@@ -113,14 +119,28 @@ def generate_road_insert_query(district_id, name, road_data):
     coordinates_json = json.dumps(coordinates)
     escaped_coordinates = coordinates_json.replace("\\", "\\\\").replace("'", "''")
     
+    # Extract segments count and create a simple segments array
+    # The schema expects a JSON array of segment objects
+    # We'll create a simple array with basic segment info
+    segment_count = road_data.get('segments', len(coordinates))
+    segments = []
+    for i in range(len(coordinates)):
+        segments.append({
+            'index': i,
+            'coordinates': coordinates[i]
+        })
+    segments_json = json.dumps(segments)
+    escaped_segments = segments_json.replace("\\", "\\\\").replace("'", "''")
+    
     # Build the field lists and values
-    fields = ['key', 'district_id', 'name', 'length', 'size', 'areas', 'coordinates', 'sub_areas']
+    fields = ['key', 'district_id', 'name', 'length', 'size', 'segments', 'areas', 'coordinates', 'sub_areas']
     values = [
         f"'{escaped_key}'",
         str(district_id),
         f"'{escaped_name}'",
         str(length),
         f"'{escaped_size}'",
+        f"'{escaped_segments}'",
         f"'{escaped_areas}'",
         f"'{escaped_coordinates}'",
         str(sub_areas)
@@ -131,10 +151,17 @@ def generate_road_insert_query(district_id, name, road_data):
         fields.insert(4, 'type')
         values.insert(4, f"'{escaped_type}'")
     
-    # Generate SQL query
+    # Generate SQL query with comment about area references
     fields_str = ', '.join(fields)
     values_str = ', '.join(values)
-    query = f"""INSERT INTO roads ({fields_str})
+    
+    # Add comment if there are area references
+    area_comment = ""
+    if areas:
+        area_names = ', '.join(areas)
+        area_comment = f"-- Road references areas: {area_names}\n-- Note: 'areas' field contains area names (strings) but schema expects area IDs (integers)\n-- You may need to replace these with actual area IDs after areas table is populated\n"
+    
+    query = f"""{area_comment}INSERT INTO roads ({fields_str})
 VALUES ({values_str});"""
     
     return query
