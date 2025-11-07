@@ -85,9 +85,13 @@ def prompt_for_area_mapping(area_name, mapping_type="area"):
             return None
         
         try:
-            return int(response)
+            area_id = int(response)
+            if area_id <= 0:
+                print(f"Invalid input. Please enter a positive integer ID or press Enter to skip.", file=sys.stderr)
+                continue
+            return area_id
         except ValueError:
-            print(f"Invalid input. Please enter a numeric ID or press Enter to skip.", file=sys.stderr)
+            print(f"Invalid input. Please enter a positive integer ID or press Enter to skip.", file=sys.stderr)
 
 
 def load_or_create_area_mappings(formatted_roads, mappings_file=None, interactive=True):
@@ -165,6 +169,31 @@ def generate_road_key(name):
     # Remove leading/trailing hyphens
     key = key.strip('-')
     return key
+
+
+def generate_unmapped_warning(names, id_map, type_label):
+    """
+    Generate warning comment for unmapped area/sub-area names.
+    
+    Args:
+        names: List of area/sub-area names
+        id_map: Optional mapping dict from names to IDs
+        type_label: Label for the type ("areas" or "sub-areas")
+        
+    Returns:
+        str: Warning comment or empty string
+    """
+    if not names:
+        return ""
+    
+    if not id_map:
+        return f"-- Road references {type_label} by name: {', '.join(names)}\n"
+    
+    unmapped = [name for name in names if name not in id_map]
+    if unmapped:
+        return f"-- Warning: Unmapped {type_label} names: {', '.join(unmapped)}\n"
+    
+    return ""
 
 
 def generate_road_insert_query(district_id, name, road_data, area_id_map=None, sub_area_id_map=None):
@@ -272,23 +301,10 @@ def generate_road_insert_query(district_id, name, road_data, area_id_map=None, s
     fields_str = ', '.join(fields)
     values_str = ', '.join(values)
     
-    # Add comment about unmapped areas if needed
+    # Add comments about unmapped areas if needed
     unmapped_comment = ""
-    if area_names and not area_id_map:
-        unmapped_areas = ', '.join(area_names)
-        unmapped_comment += f"-- Road references areas by name: {unmapped_areas}\n"
-    elif area_names and area_id_map:
-        unmapped_areas = [name for name in area_names if name not in area_id_map]
-        if unmapped_areas:
-            unmapped_comment += f"-- Warning: Unmapped area names: {', '.join(unmapped_areas)}\n"
-    
-    if sub_area_names and not sub_area_id_map:
-        unmapped_sub_areas = ', '.join(sub_area_names)
-        unmapped_comment += f"-- Road references sub-areas by name: {unmapped_sub_areas}\n"
-    elif sub_area_names and sub_area_id_map:
-        unmapped_sub_areas = [name for name in sub_area_names if name not in sub_area_id_map]
-        if unmapped_sub_areas:
-            unmapped_comment += f"-- Warning: Unmapped sub-area names: {', '.join(unmapped_sub_areas)}\n"
+    unmapped_comment += generate_unmapped_warning(area_names, area_id_map, "areas")
+    unmapped_comment += generate_unmapped_warning(sub_area_names, sub_area_id_map, "sub-areas")
     
     query = f"""{unmapped_comment}INSERT INTO roads ({fields_str})
 VALUES ({values_str});"""
