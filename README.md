@@ -173,19 +173,47 @@ Generates SQL INSERT queries for adding roads to the database from formatted_roa
 
 **Usage:**
 ```bash
-# Using default values from the script
+# Using default values from the script (interactive mode - will prompt for area IDs)
 python3 step_6_create_roads_sql.py
 
 # Using command-line arguments
 python3 step_6_create_roads_sql.py --district-id 1 --input formatted_roads.json --output step_6_output.txt
+
+# Using pre-defined area mappings from a JSON file
+python3 step_6_create_roads_sql.py --area-mappings area_mappings.json
+
+# Non-interactive mode (no prompts, keeps area names as-is)
+python3 step_6_create_roads_sql.py --no-interactive
 ```
 
 **Options:**
 - `--district-id` - District ID for all roads (default: 1)
 - `--input` - Path to formatted roads JSON file (default: formatted_roads.json)
 - `--output` - Output file path (default: step_6_output.txt)
+- `--area-mappings` - Path to area mappings JSON file (optional)
+- `--no-interactive` - Disable interactive prompts for area ID mappings
 
-**Note:** The script generates SQL INSERT statements with all required fields from the schema. The `areas` field in the database schema expects area IDs (integers), but formatted_roads.json contains area names (strings). The generated SQL includes comments to alert you to this mapping requirement. You may need to post-process the SQL or use application logic to resolve area names to IDs before insertion.
+**Area ID Mapping:**
+
+The script can convert area and sub-area names to IDs in three ways:
+
+1. **Interactive mode** (default): Prompts you for area IDs while running. Saves mappings to `area_mappings.json` for future use.
+2. **Pre-defined mappings**: Use `--area-mappings` to load area IDs from a JSON file:
+   ```json
+   {
+     "areas": {
+       "station-8": 1,
+       "station-9": 2,
+       "station-10": 3
+     },
+     "sub_areas": {
+       "sub-area-1": 10
+     }
+   }
+   ```
+3. **No mapping** (using `--no-interactive`): Keeps area names as strings in the SQL. You'll need to update them manually or via application logic.
+
+**Note:** The script generates SQL INSERT statements using the updated schema with `sub_area_ids` as a JSON array field.
 
 ## Files
 
@@ -195,6 +223,7 @@ python3 step_6_create_roads_sql.py --district-id 1 --input formatted_roads.json 
 - `formatted_roads.json` - Named roads output from step_3_format_roads.py (generated, not in repository)
 - `unnamed_roads.json` - Unnamed roads output from step_3_format_roads.py (generated, not in repository)
 - `step_6_output.txt` - SQL queries output from step_6_create_roads_sql.py (generated, not in repository)
+- `area_mappings.json` - Area name to ID mappings created by step_6 in interactive mode (generated, not in repository)
 - `areas/` - Directory containing area boundary GeoJSON files
 - `sub_areas/` - Directory containing sub-area boundary GeoJSON files
 
