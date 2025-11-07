@@ -77,7 +77,7 @@ python3 step_3_format_roads.py --unnamed-output my_unnamed_roads.json
 
 ### Step 4: Create District SQL (`step_4_create_district_member_sql.py`)
 
-Generates SQL INSERT queries for adding districts to the database.
+Generates SQL INSERT queries for adding districts to the database, including boundary coordinates from a GeoJSON file.
 
 **Usage:**
 ```bash
@@ -85,18 +85,21 @@ Generates SQL INSERT queries for adding districts to the database.
 python3 step_4_create_district_member_sql.py
 
 # Using command-line arguments (all fields)
-python3 step_4_create_district_member_sql.py "District Name" "2025-01-15 12:00:00" 1 '{"type":"Polygon","coordinates":[[[0,0],[0,1],[1,1],[1,0],[0,0]]]}' 1
+python3 step_4_create_district_member_sql.py "District Name" "2025-01-15 12:00:00" 1 1
 
 # Using command-line arguments (minimal - name and user IDs only)
-python3 step_4_create_district_member_sql.py "District Name" "" 1 "" 1
+python3 step_4_create_district_member_sql.py "District Name" "" 1 1
+
+# Using a different GeoJSON file
+python3 step_4_create_district_member_sql.py --geojson path/to/boundary.geojson
 ```
 
 **Options:**
 - `name` - District name (optional, defaults to value in script)
 - `created_at` - Created timestamp in ISO8601 format (optional, omit or use empty string for datetime('now'))
 - `created_by` - User ID of the creator (optional, defaults to value in script)
-- `district_border_coordinates` - GeoJSON geometry string (optional, omit or use empty string for NULL)
 - `owner` - User ID of the owner (optional, defaults to value in script)
+- `--geojson` - Path to GeoJSON boundary file (default: my_district.geojson)
 
 **Example Output:**
 ```sql

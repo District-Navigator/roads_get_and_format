@@ -6,6 +6,8 @@ Takes inputs: name, created_at, created_by, district_border_coordinates, owner
 """
 
 import argparse
+import json
+import os
 import sys
 
 # ============================================================================
@@ -14,9 +16,34 @@ import sys
 DISTRICT_NAME = "My District"
 CREATED_AT = None  # Use None for datetime('now'), or provide ISO8601 string like '2025-01-15 12:00:00'
 CREATED_BY = 1
-DISTRICT_BORDER_COORDINATES = None  # GeoJSON geometry as string, or None
 OWNER = 1
 # ============================================================================
+
+
+def load_coordinates_from_geojson(geojson_path):
+    """
+    Load coordinates from a GeoJSON file.
+    
+    Args:
+        geojson_path: Path to the GeoJSON file
+        
+    Returns:
+        str: JSON string of the geometry object, or None if not found
+    """
+    try:
+        with open(geojson_path, 'r') as f:
+            geojson_data = json.load(f)
+        
+        # Extract geometry from the first feature
+        if 'features' in geojson_data and len(geojson_data['features']) > 0:
+            geometry = geojson_data['features'][0].get('geometry')
+            if geometry:
+                # Return the geometry as a JSON string
+                return json.dumps(geometry)
+    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+        print(f"Warning: Could not load coordinates from {geojson_path}: {e}", file=sys.stderr)
+    
+    return None
 
 
 def generate_district_insert_query(name, created_at, created_by, district_border_coordinates, owner):
@@ -66,9 +93,9 @@ def generate_district_insert_query(name, created_at, created_by, district_border
     
     # Add district_border_coordinates if provided
     if district_border_coordinates is not None:
-        # Escape single quotes in JSON string for SQL (SQLite standard: '' escapes ')
-        # Note: district_border_coordinates should be a JSON string like '{"type":"Polygon",...}'
-        escaped_coordinates = str(district_border_coordinates).replace("'", "''")
+        # Escape single quotes and backslashes in JSON string for SQL
+        # Double backslashes first to prevent double-escaping, then escape quotes
+        escaped_coordinates = str(district_border_coordinates).replace("\\", "\\\\").replace("'", "''")
         fields.append('district_border_coordinates')
         values.append(f"'{escaped_coordinates}'")
     
@@ -108,18 +135,17 @@ def main():
         help='User ID of the creator (FK to users.id)'
     )
     parser.add_argument(
-        'district_border_coordinates',
-        type=str,
-        nargs='?',
-        default=None,
-        help='GeoJSON geometry string (or omit for NULL)'
-    )
-    parser.add_argument(
         'owner',
         type=int,
         nargs='?',
         default=None,
         help='User ID of the owner (FK to users.id)'
+    )
+    parser.add_argument(
+        '--geojson',
+        type=str,
+        default='my_district.geojson',
+        help='Path to GeoJSON file (default: my_district.geojson)'
     )
     
     args = parser.parse_args()
@@ -129,12 +155,15 @@ def main():
     # Treat empty strings as None for optional fields
     created_at = args.created_at if args.created_at not in (None, '') else CREATED_AT
     created_by = args.created_by if args.created_by is not None else CREATED_BY
-    district_border_coordinates = (
-        args.district_border_coordinates 
-        if args.district_border_coordinates not in (None, '') 
-        else DISTRICT_BORDER_COORDINATES
-    )
     owner = args.owner if args.owner is not None else OWNER
+    
+    # Load coordinates from GeoJSON file
+    # Use absolute path if provided, otherwise look in script directory
+    geojson_path = args.geojson
+    if not os.path.isabs(geojson_path):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        geojson_path = os.path.join(script_dir, geojson_path)
+    district_border_coordinates = load_coordinates_from_geojson(geojson_path)
     
     try:
         query = generate_district_insert_query(name, created_at, created_by, district_border_coordinates, owner)
