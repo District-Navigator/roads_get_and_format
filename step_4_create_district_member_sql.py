@@ -25,9 +25,9 @@ def generate_district_insert_query(name, created_at, created_by, district_border
     
     Args:
         name: District name (TEXT, required)
-        created_at: Created timestamp (TEXT ISO8601 or None for datetime('now'))
+        created_at: Created timestamp (TEXT ISO8601 string or None for datetime('now'))
         created_by: User ID who created the district (INTEGER, FK to users.id)
-        district_border_coordinates: GeoJSON geometry string (TEXT or None)
+        district_border_coordinates: GeoJSON geometry as JSON string (TEXT or None)
         owner: Owner user ID (INTEGER, FK to users.id)
         
     Returns:
@@ -58,7 +58,8 @@ def generate_district_insert_query(name, created_at, created_by, district_border
     
     # Add created_at if provided
     if created_at is not None:
-        # Escape single quotes in timestamp
+        # Escape single quotes in timestamp string
+        # Note: created_at should be a string in ISO8601 format like '2025-01-15 12:00:00'
         escaped_created_at = str(created_at).replace("'", "''")
         fields.append('created_at')
         values.append(f"'{escaped_created_at}'")
@@ -66,7 +67,7 @@ def generate_district_insert_query(name, created_at, created_by, district_border
     # Add district_border_coordinates if provided
     if district_border_coordinates is not None:
         # Escape single quotes in JSON string for SQL (SQLite standard: '' escapes ')
-        # Note: backslash escaping is less critical in SQLite TEXT fields
+        # Note: district_border_coordinates should be a JSON string like '{"type":"Polygon",...}'
         escaped_coordinates = str(district_border_coordinates).replace("'", "''")
         fields.append('district_border_coordinates')
         values.append(f"'{escaped_coordinates}'")
