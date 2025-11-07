@@ -212,8 +212,8 @@ def generate_road_insert_query(district_id, name, road_data, area_id_map=None, s
     # Extract areas and convert to IDs if mapping provided
     area_names = road_data.get('areas', [])
     if area_id_map:
-        # Convert area names to IDs
-        area_ids = [area_id_map[area_name] for area_name in area_names if area_name in area_id_map]
+        # Convert area names to IDs, keep unmapped names as-is for warning later
+        area_ids = [area_id_map.get(area_name, area_name) for area_name in area_names]
     else:
         # Keep as names (for backward compatibility)
         area_ids = area_names
@@ -224,10 +224,10 @@ def generate_road_insert_query(district_id, name, road_data, area_id_map=None, s
     # Extract sub_areas and convert to IDs if mapping provided
     sub_area_names = road_data.get('sub_areas', [])
     if sub_area_id_map:
-        # Convert sub-area names to IDs
-        sub_area_ids = [sub_area_id_map[sub_area_name] for sub_area_name in sub_area_names if sub_area_name in sub_area_id_map]
+        # Convert sub-area names to IDs, keep unmapped names as-is for warning later
+        sub_area_ids = [sub_area_id_map.get(sub_area_name, sub_area_name) for sub_area_name in sub_area_names]
     else:
-        # Keep as names (for backward compatibility) 
+        # Keep as names (for backward compatibility)
         sub_area_ids = sub_area_names
     
     sub_area_ids_json = json.dumps(sub_area_ids)
