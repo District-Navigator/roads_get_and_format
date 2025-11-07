@@ -170,10 +170,14 @@ def main():
         
         # Write output to file
         output_file = 'step_4_output.txt'
-        with open(output_file, 'w') as f:
-            f.write(query)
+        try:
+            with open(output_file, 'w') as f:
+                f.write(query)
+            print(f"SQL query written to {output_file}")
+        except IOError as e:
+            print(f"Error: Could not write to {output_file}: {e}", file=sys.stderr)
+            return 1
         
-        print(f"SQL query written to {output_file}")
         return 0
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
