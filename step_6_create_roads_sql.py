@@ -119,15 +119,13 @@ def generate_road_insert_query(district_id, name, road_data):
     coordinates_json = json.dumps(coordinates)
     escaped_coordinates = coordinates_json.replace("\\", "\\\\").replace("'", "''")
     
-    # Extract segments count and create a simple segments array
+    # Extract segments - create a JSON array of segment objects
     # The schema expects a JSON array of segment objects
-    # We'll create a simple array with basic segment info
-    segment_count = road_data.get('segments', len(coordinates))
     segments = []
-    for i in range(len(coordinates)):
+    for i, coord_segment in enumerate(coordinates):
         segments.append({
             'index': i,
-            'coordinates': coordinates[i]
+            'coordinates': coord_segment
         })
     segments_json = json.dumps(segments)
     escaped_segments = segments_json.replace("\\", "\\\\").replace("'", "''")
