@@ -144,6 +144,49 @@ Example output structure:
 }
 ```
 
+### Step 5: Create Areas SQL (`step_5_create_areas_sql.py`)
+
+Generates SQL INSERT queries for adding areas and sub-areas to the database.
+
+**Usage:**
+```bash
+# Using default values from the script
+python3 step_5_create_areas_sql.py
+
+# Using command-line arguments
+python3 step_5_create_areas_sql.py --district-id 1 --created-by 1
+
+# Using custom directories
+python3 step_5_create_areas_sql.py --areas-dir areas --sub-areas-dir sub_areas --output step_5_output.txt
+```
+
+**Options:**
+- `--district-id` - District ID for all areas (default: 1)
+- `--created-by` - User ID of the creator (default: 1)
+- `--areas-dir` - Path to areas directory (default: areas)
+- `--sub-areas-dir` - Path to sub-areas directory (default: sub_areas)
+- `--output` - Output file path (default: step_5_output.txt)
+
+### Step 6: Create Roads SQL (`step_6_create_roads_sql.py`)
+
+Generates SQL INSERT queries for adding roads to the database from formatted_roads.json.
+
+**Usage:**
+```bash
+# Using default values from the script
+python3 step_6_create_roads_sql.py
+
+# Using command-line arguments
+python3 step_6_create_roads_sql.py --district-id 1 --input formatted_roads.json --output step_6_output.txt
+```
+
+**Options:**
+- `--district-id` - District ID for all roads (default: 1)
+- `--input` - Path to formatted roads JSON file (default: formatted_roads.json)
+- `--output` - Output file path (default: step_6_output.txt)
+
+**Note:** The script generates SQL INSERT statements with all required fields from the schema. The `areas` field in the database schema expects area IDs (integers), but formatted_roads.json contains area names (strings). The generated SQL includes comments to alert you to this mapping requirement. You may need to post-process the SQL or use application logic to resolve area names to IDs before insertion.
+
 ## Files
 
 - `my_district.geojson` - Example GeoJSON file containing the Berea fire district boundary
@@ -151,6 +194,7 @@ Example output structure:
 - `roads.json` - Output file from step_2_get_roads.py (generated, not in repository)
 - `formatted_roads.json` - Named roads output from step_3_format_roads.py (generated, not in repository)
 - `unnamed_roads.json` - Unnamed roads output from step_3_format_roads.py (generated, not in repository)
+- `step_6_output.txt` - SQL queries output from step_6_create_roads_sql.py (generated, not in repository)
 - `areas/` - Directory containing area boundary GeoJSON files
 - `sub_areas/` - Directory containing sub-area boundary GeoJSON files
 
