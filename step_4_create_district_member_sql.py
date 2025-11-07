@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Create District Member SQL Query Generator
-Generates SQL INSERT queries for adding district members to the database.
-Takes inputs: district_id, user_id
+Create District SQL Query Generator
+Generates SQL INSERT queries for adding districts to the database.
+Takes inputs: name, created_at, created_by, district_border_coordinates, owner
 """
 
 import argparse
@@ -11,40 +11,70 @@ import sys
 # ============================================================================
 # INPUT VARIABLES - Edit these values when running in PyCharm/IDE
 # ============================================================================
-DISTRICT_ID = 2
-USER_ID = 1
+DISTRICT_NAME = "My District"
+CREATED_AT = None  # Use None for datetime('now'), or provide ISO8601 string like '2025-01-15 12:00:00'
+CREATED_BY = 1
+DISTRICT_BORDER_COORDINATES = None  # GeoJSON geometry as string, or None
+OWNER = 1
 # ============================================================================
 
 
-def generate_district_member_insert_query(district_id, user_id):
+def generate_district_insert_query(name, created_at, created_by, district_border_coordinates, owner):
     """
-    Generate an SQL INSERT query for adding a district member to the database.
+    Generate an SQL INSERT query for adding a district to the database.
     
     Args:
-        district_id: District ID (INTEGER, FK to districts.id)
-        user_id: User ID (INTEGER, FK to users.id)
+        name: District name (TEXT, required)
+        created_at: Created timestamp (TEXT ISO8601 or None for datetime('now'))
+        created_by: User ID who created the district (INTEGER, FK to users.id)
+        district_border_coordinates: GeoJSON geometry string (TEXT or None)
+        owner: Owner user ID (INTEGER, FK to users.id)
         
     Returns:
         str: SQL INSERT query
     """
     # Validate inputs
-    if not isinstance(district_id, int):
-        try:
-            district_id = int(district_id)
-        except (ValueError, TypeError):
-            raise ValueError("district_id must be an integer")
+    if not name or not name.strip():
+        raise ValueError("District name cannot be empty")
     
-    if not isinstance(user_id, int):
+    if not isinstance(created_by, int):
         try:
-            user_id = int(user_id)
+            created_by = int(created_by)
         except (ValueError, TypeError):
-            raise ValueError("user_id must be an integer")
+            raise ValueError("created_by must be an integer (user ID)")
+    
+    if not isinstance(owner, int):
+        try:
+            owner = int(owner)
+        except (ValueError, TypeError):
+            raise ValueError("owner must be an integer (user ID)")
+    
+    # Escape single quotes in name for SQL (SQLite standard: '' escapes ')
+    escaped_name = name.replace("'", "''")
+    
+    # Build the field lists and values
+    fields = ['name', 'created_by', 'owner']
+    values = [f"'{escaped_name}'", str(created_by), str(owner)]
+    
+    # Add created_at if provided
+    if created_at is not None:
+        # Escape single quotes in timestamp
+        escaped_created_at = str(created_at).replace("'", "''")
+        fields.append('created_at')
+        values.append(f"'{escaped_created_at}'")
+    
+    # Add district_border_coordinates if provided
+    if district_border_coordinates is not None:
+        # Escape single quotes and backslashes in JSON string for SQL
+        escaped_coordinates = str(district_border_coordinates).replace("\\", "\\\\").replace("'", "''")
+        fields.append('district_border_coordinates')
+        values.append(f"'{escaped_coordinates}'")
     
     # Generate SQL query
-    # The database schema has defaults for role, permissions, updated_at, deleted_at
-    # We explicitly set joined_at to datetime('now') and active to 1
-    query = f"""INSERT INTO district_members (district_id, user_id, joined_at, active)
-VALUES ({district_id}, {user_id}, datetime('now'), 1);"""
+    fields_str = ', '.join(fields)
+    values_str = ', '.join(values)
+    query = f"""INSERT INTO districts ({fields_str})
+VALUES ({values_str});"""
     
     return query
 
@@ -52,31 +82,56 @@ VALUES ({district_id}, {user_id}, datetime('now'), 1);"""
 def main():
     """Main execution function."""
     parser = argparse.ArgumentParser(
-        description='Generate SQL INSERT query for adding a district member'
+        description='Generate SQL INSERT query for adding a district'
     )
     parser.add_argument(
-        'district_id',
-        type=int,
-        nargs='?',  # Make positional argument optional
+        'name',
+        type=str,
+        nargs='?',
         default=None,
-        help='District ID (FK to districts.id)'
+        help='District name'
     )
     parser.add_argument(
-        'user_id',
-        type=int,
-        nargs='?',  # Make positional argument optional
+        'created_at',
+        type=str,
+        nargs='?',
         default=None,
-        help='User ID (FK to users.id)'
+        help='Created timestamp (ISO8601 format, or omit for datetime(\'now\'))'
+    )
+    parser.add_argument(
+        'created_by',
+        type=int,
+        nargs='?',
+        default=None,
+        help='User ID of the creator (FK to users.id)'
+    )
+    parser.add_argument(
+        'district_border_coordinates',
+        type=str,
+        nargs='?',
+        default=None,
+        help='GeoJSON geometry string (or omit for NULL)'
+    )
+    parser.add_argument(
+        'owner',
+        type=int,
+        nargs='?',
+        default=None,
+        help='User ID of the owner (FK to users.id)'
     )
     
     args = parser.parse_args()
     
     # Use command-line arguments if provided, otherwise use variables from top of file
-    district_id = args.district_id if args.district_id is not None else DISTRICT_ID
-    user_id = args.user_id if args.user_id is not None else USER_ID
+    name = args.name if args.name is not None else DISTRICT_NAME
+    # Treat empty strings as None for optional fields
+    created_at = args.created_at if args.created_at not in (None, '') else CREATED_AT
+    created_by = args.created_by if args.created_by is not None else CREATED_BY
+    district_border_coordinates = args.district_border_coordinates if args.district_border_coordinates not in (None, '') else DISTRICT_BORDER_COORDINATES
+    owner = args.owner if args.owner is not None else OWNER
     
     try:
-        query = generate_district_member_insert_query(district_id, user_id)
+        query = generate_district_insert_query(name, created_at, created_by, district_border_coordinates, owner)
         print(query)
         return 0
     except ValueError as e:

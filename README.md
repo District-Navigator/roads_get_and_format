@@ -75,27 +75,33 @@ python3 step_3_format_roads.py --unnamed-output my_unnamed_roads.json
 - `--sub-areas-dir` - Path to directory containing sub-area GeoJSON files (default: sub_areas)
 - `--unnamed-output` - Path to output file for unnamed roads (default: unnamed_roads.json)
 
-### Step 4: Create District Member SQL (`step_4_create_district_member_sql.py`)
+### Step 4: Create District SQL (`step_4_create_district_member_sql.py`)
 
-Generates SQL INSERT queries for adding district members to the database.
+Generates SQL INSERT queries for adding districts to the database.
 
 **Usage:**
 ```bash
 # Using default values from the script
 python3 step_4_create_district_member_sql.py
 
-# Using command-line arguments
-python3 step_4_create_district_member_sql.py 2 1
+# Using command-line arguments (all fields)
+python3 step_4_create_district_member_sql.py "District Name" "2025-01-15 12:00:00" 1 '{"type":"Polygon","coordinates":[[[0,0],[0,1],[1,1],[1,0],[0,0]]]}' 1
+
+# Using command-line arguments (minimal - name and user IDs only)
+python3 step_4_create_district_member_sql.py "District Name" "" 1 "" 1
 ```
 
 **Options:**
-- `district_id` - District ID (optional, defaults to value in script)
-- `user_id` - User ID (optional, defaults to value in script)
+- `name` - District name (optional, defaults to value in script)
+- `created_at` - Created timestamp in ISO8601 format (optional, omit or use empty string for datetime('now'))
+- `created_by` - User ID of the creator (optional, defaults to value in script)
+- `district_border_coordinates` - GeoJSON geometry string (optional, omit or use empty string for NULL)
+- `owner` - User ID of the owner (optional, defaults to value in script)
 
 **Example Output:**
 ```sql
-INSERT INTO district_members (district_id, user_id, joined_at, active)
-VALUES (2, 1, datetime('now'), 1);
+INSERT INTO districts (name, created_by, owner)
+VALUES ('District Name', 1, 1);
 ```
 
 **Output Format:**
