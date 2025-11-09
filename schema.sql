@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS roads (
   segments TEXT,                               -- JSON array of segment objects (as TEXT)
   areas TEXT,                                  -- JSON array of area ids this road intersects/belongs to (as TEXT)
   coordinates TEXT,                            -- GeoJSON LineString or JSON array of [lng,lat] pairs (as TEXT)
-  sub_areas INTEGER NOT NULL DEFAULT 0,        -- 0/1 boolean flag
+  sub_area_ids TEXT,                           -- JSON array of sub-area ids (new canonical field)
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   last_updated TEXT NOT NULL DEFAULT (datetime('now')),
   deleted_at TEXT,                             -- soft-delete timestamp or NULL
